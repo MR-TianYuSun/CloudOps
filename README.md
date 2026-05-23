@@ -10,6 +10,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![在线演示](https://img.shields.io/badge/在线演示-点击访问-blue?logo=globe)](http://47.101.147.0:4000)
 
 </div>
 
