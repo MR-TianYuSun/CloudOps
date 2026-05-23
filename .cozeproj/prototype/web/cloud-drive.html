@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/inter.css" rel="stylesheet"/>
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/manrope.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #7C5CFF;
+      --color-primary-container:    #9B82FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #070A14;
+      --color-surface-container-lowest:   #0B0F1A;
+      --color-surface:                    #0F1420;
+      --color-surface-container:          #161B2E;
+      --color-surface-container-high:     #1C2338;
+      --color-surface-container-highest:  #232B45;
+      /* === 文字 === */
+      --color-on-surface:           #F7FAFF;
+      --color-on-surface-variant:   #9AA7C7;
+      /* === 功能色 === */
+      --color-success:  #62FAD3;
+      --color-error:    #FF5C5C;
+      --color-warning:  #FFB547;
+      /* === 强调色 === */
+      --color-accent:   #69E7FF;
+      /* === 边框 === */
+      --color-outline:          rgba(255,255,255,0.12);
+      --color-outline-variant:  rgba(255,255,255,0.06);
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.4);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.5);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.6);
+      /* === 字体 === */
+      --font-sans: "Inter", "Manrope", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start -->
+  <header class="bg-surface/80 backdrop-blur-xl border-b border-outline/20 sticky top-0 z-40 h-14 flex items-center justify-between px-5">
+    <div class="flex items-center gap-3">
+      <i data-lucide="cloud" class="text-primary w-5 h-5"></i>
+      <span class="font-bold text-base tracking-tight">CloudOps</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="relative text-on-surface-variant hover:text-on-surface transition-colors" id="btn-notification">
+        <i data-lucide="bell" class="w-4.5 h-4.5"></i>
+        <span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+      <div class="flex items-center gap-2 cursor-pointer">
+        <div class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">初</div>
+        <span class="text-sm text-on-surface-variant">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface-container-lowest/60 backdrop-blur-md border-r border-outline/20 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="dashboard">
+          <i data-lucide="gauge" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="cloud-drive.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm transition-all" aria-current="page" data-page="cloud-drive">
+          <i data-lucide="hard-drive" class="w-4 h-4"></i>云盘
+        </a>
+        <a href="servers.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="servers">
+          <i data-lucide="server" class="w-4 h-4"></i>服务器管理
+        </a>
+        <a href="storage-nodes.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="storage-nodes">
+          <i data-lucide="database" class="w-4 h-4"></i>存储节点
+        </a>
+        <a href="users.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="users">
+          <i data-lucide="users" class="w-4 h-4"></i>用户管理
+        </a>
+        <a href="settings.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="settings">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+  <!-- @nav:end -->
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6 flex flex-col gap-5">
+
+      <!-- 顶部工具栏 -->
+      <div class="flex items-center justify-between gap-4">
+        <!-- 左侧面包屑 -->
+        <nav id="breadcrumb" class="flex items-center gap-1.5 text-sm" aria-label="文件路径">
+          <a href="cloud-drive.html" class="text-on-surface-variant hover:text-on-surface transition-colors">全部文件</a>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-on-surface-variant/50"></i>
+          <a href="cloud-drive.html" class="text-on-surface-variant hover:text-on-surface transition-colors">项目文档</a>
+          <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-on-surface-variant/50"></i>
+          <span class="text-on-surface font-medium">2024</span>
+        </nav>
+
+        <!-- 右侧操作按钮组 -->
+        <div class="flex items-center gap-2.5">
+          <!-- 上传文件按钮 -->
+          <button id="btn-upload" class="bg-primary text-on-primary px-3.5 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-1.5">
+            <i data-lucide="upload" class="w-3.5 h-3.5"></i>上传文件
+          </button>
+          <!-- 新建文件夹按钮 -->
+          <button id="btn-new-folder" class="bg-surface-container text-on-surface border-none px-3.5 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-1.5">
+            <i data-lucide="folder-plus" class="w-3.5 h-3.5"></i>新建文件夹
+          </button>
+          <!-- 列表/网格视图切换 -->
+          <div class="flex items-center bg-surface-container rounded-md p-0.5">
+            <button id="btn-view-list" class="p-1.5 rounded bg-primary/15 text-primary transition-all" title="列表视图">
+              <i data-lucide="list" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-view-grid" class="p-1.5 rounded text-on-surface-variant hover:text-on-surface transition-all" title="网格视图">
+              <i data-lucide="layout-grid" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <!-- 搜索框 -->
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-on-surface-variant/50 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            <input id="input-search" type="text" placeholder="搜索文件…" class="bg-surface-container border-none rounded-md pl-8 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors w-48" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 文件列表区（列表视图） -->
+      <div id="file-list-view" class="bg-surface/60 backdrop-blur-xl rounded-lg shadow-card overflow-hidden flex-1 flex flex-col">
+        <!-- 表头 -->
+        <div class="grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 bg-surface-container/80 text-xs font-semibold text-on-surface-variant uppercase tracking-wide border-b border-outline-variant/30">
+          <span>名称</span>
+          <span>大小</span>
+          <span>修改时间</span>
+          <span>上传者</span>
+          <span class="text-right">操作</span>
+        </div>
+
+        <!-- 文件列表 -->
+        <div id="file-table-body" class="divide-y divide-outline-variant/20 flex-1">
+
+          <!-- 列表-文件夹1：项目文档 -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="folder" data-id="folder-1">
+            <div class="flex items-center gap-3">
+              <i data-lucide="folder" class="w-5 h-5 text-warning shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">项目文档</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">—</span>
+            <span class="text-sm text-on-surface-variant">2024-12-10 14:30</span>
+            <span class="text-sm text-on-surface-variant">小初</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="folder-1">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="folder-1">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="folder-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件夹2：部署脚本 -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="folder" data-id="folder-2">
+            <div class="flex items-center gap-3">
+              <i data-lucide="folder" class="w-5 h-5 text-warning shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">部署脚本</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">—</span>
+            <span class="text-sm text-on-surface-variant">2024-12-08 09:15</span>
+            <span class="text-sm text-on-surface-variant">小初</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="folder-2">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="folder-2">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="folder-2">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件夹3：设计素材 -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="folder" data-id="folder-3">
+            <div class="flex items-center gap-3">
+              <i data-lucide="folder" class="w-5 h-5 text-warning shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">设计素材</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">—</span>
+            <span class="text-sm text-on-surface-variant">2024-11-28 16:42</span>
+            <span class="text-sm text-on-surface-variant">李晓华</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="folder-3">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="folder-3">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="folder-3">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件夹4：备份文件 -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="folder" data-id="folder-4">
+            <div class="flex items-center gap-3">
+              <i data-lucide="folder" class="w-5 h-5 text-warning shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">备份文件</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">—</span>
+            <span class="text-sm text-on-surface-variant">2024-11-15 11:20</span>
+            <span class="text-sm text-on-surface-variant">王大明</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="folder-4">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="folder-4">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="folder-4">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件1：deploy.sh -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="file" data-id="file-1">
+            <div class="flex items-center gap-3">
+              <i data-lucide="terminal" class="w-5 h-5 text-success shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">deploy.sh</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">2.3 KB</span>
+            <span class="text-sm text-on-surface-variant">2024-12-09 18:05</span>
+            <span class="text-sm text-on-surface-variant">小初</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="file-1">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="file-1">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="file-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件2：config.yaml -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="file" data-id="file-2">
+            <div class="flex items-center gap-3">
+              <i data-lucide="file-code" class="w-5 h-5 text-accent shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">config.yaml</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">1.1 KB</span>
+            <span class="text-sm text-on-surface-variant">2024-12-07 10:33</span>
+            <span class="text-sm text-on-surface-variant">小初</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="file-2">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="file-2">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="file-2">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件3：架构图.png -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="file" data-id="file-3">
+            <div class="flex items-center gap-3">
+              <i data-lucide="image" class="w-5 h-5 text-primary shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">架构图.png</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">4.2 MB</span>
+            <span class="text-sm text-on-surface-variant">2024-12-05 13:22</span>
+            <span class="text-sm text-on-surface-variant">李晓华</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="file-3">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="file-3">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="file-3">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件4：季度报告.pdf -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="file" data-id="file-4">
+            <div class="flex items-center gap-3">
+              <i data-lucide="file-text" class="w-5 h-5 text-error shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">季度报告.pdf</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">856 KB</span>
+            <span class="text-sm text-on-surface-variant">2024-12-03 09:48</span>
+            <span class="text-sm text-on-surface-variant">王大明</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="file-4">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="file-4">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="file-4">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 列表-文件5：README.md -->
+          <div class="file-row grid grid-cols-[1fr_100px_140px_100px_100px] px-5 py-3 hover:bg-surface-container/40 transition-colors items-center cursor-pointer group" data-type="file" data-id="file-5">
+            <div class="flex items-center gap-3">
+              <i data-lucide="file-text" class="w-5 h-5 text-on-surface-variant shrink-0"></i>
+              <span class="text-sm font-medium text-on-surface">README.md</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">3.7 KB</span>
+            <span class="text-sm text-on-surface-variant">2024-12-01 20:14</span>
+            <span class="text-sm text-on-surface-variant">小初</span>
+            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-all" title="下载" data-action="download" data-id="file-5">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-accent hover:bg-accent/10 transition-all" title="分享" data-action="share" data-id="file-5">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button class="btn-file-action p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error/10 transition-all" title="删除" data-action="delete" data-id="file-5">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 底部状态栏 -->
+        <div class="px-5 py-2.5 bg-surface-container/50 border-t border-outline-variant/20 text-xs text-on-surface-variant flex items-center justify-between">
+          <span>共 9 项，已使用 1.2 GB</span>
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="hard-drive" class="w-3.5 h-3.5"></i>
+            存储空间：1.2 GB / 10 GB
+          </span>
+        </div>
+      </div>
+
+      <!-- 拖拽上传区域（默认隐藏） -->
+      <div id="drop-zone" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none">
+        <div class="border-2 border-dashed border-primary/60 rounded-2xl bg-surface/80 backdrop-blur-xl p-16 flex flex-col items-center gap-4">
+          <i data-lucide="upload-cloud" class="w-16 h-16 text-primary"></i>
+          <p class="text-lg font-semibold text-on-surface">松开以上传文件</p>
+          <p class="text-sm text-on-surface-variant">文件将上传至当前目录</p>
+        </div>
+      </div>
+
+    </main>
+    <!-- @main-content:end -->
+  </div>
+
+  <script>lucide.createIcons();</script>
+
+  <script>
+  $(function() {
+
+    // === 视图切换 ===
+    $('#btn-view-list').on('click', function() {
+      $(this).addClass('bg-primary/15 text-primary').removeClass('text-on-surface-variant');
+      $('#btn-view-grid').removeClass('bg-primary/15 text-primary').addClass('text-on-surface-variant');
+      // 列表视图已为默认显示，此处仅切换激活态
+      // 后续应实现：将网格视图容器隐藏，显示列表视图容器
+    });
+
+    $('#btn-view-grid').on('click', function() {
+      $(this).addClass('bg-primary/15 text-primary').removeClass('text-on-surface-variant');
+      $('#btn-view-list').removeClass('bg-primary/15 text-primary').addClass('text-on-surface-variant');
+      // 后续应实现：
+      // 1. 隐藏列表视图容器 $('#file-list-view')
+      // 2. 显示网格视图容器（以卡片网格形式展示文件和文件夹）
+      // 3. 每个卡片包含图标、文件名、大小信息
+      console.log('切换到网格视图');
+    });
+
+    // === 搜索交互 ===
+    $('#input-search').on('input', function() {
+      const keyword = $(this).val().toLowerCase().trim();
+      // 后续应实现：
+      // 1. 遍历所有 .file-row，根据文件名匹配关键字
+      // 2. 匹配的行显示，不匹配的行隐藏
+      // 3. 无匹配时显示空状态提示
+      if (keyword) {
+        $('#file-table-body .file-row').each(function() {
+          const name = $(this).find('.text-sm.font-medium').text().toLowerCase();
+          $(this).toggle(name.includes(keyword));
+        });
+      } else {
+        $('#file-table-body .file-row').show();
+      }
+    });
+
+    // === 上传文件按钮 ===
+    $('#btn-upload').on('click', function() {
+      // 后续应实现：
+      // 1. 创建隐藏的 <input type="file" multiple> 元素
+      // 2. 触发 click 事件打开文件选择器
+      // 3. 用户选择文件后，在列表顶部添加上传中的文件行
+      // 4. 模拟上传进度条
+      // 5. 上传完成后更新文件大小和修改时间
+      console.log('上传文件');
+    });
+
+    // === 新建文件夹按钮 ===
+    $('#btn-new-folder').on('click', function() {
+      // 后续应实现：
+      // 1. 在文件列表顶部插入一个新行
+      // 2. 文件夹名称处显示为 input 输入框，自动聚焦
+      // 3. 用户输入名称后按 Enter 确认创建，按 ESC 取消
+      // 4. 确认后将 input 替换为文字，更新状态栏计数
+      console.log('新建文件夹');
+    });
+
+    // === 文件操作按钮（事件委托） ===
+    $('#file-table-body').on('click', '.btn-file-action', function(e) {
+      e.stopPropagation();
+      const action = $(this).data('action');
+      const fileId = $(this).data('id');
+
+      if (action === 'download') {
+        // 后续应实现：
+        // 1. 根据文件类型生成下载链接或调用 API
+        // 2. 触发浏览器下载
+        // 3. 文件夹类型应先打包为 zip 再下载
+        console.log('下载:', fileId);
+      }
+
+      if (action === 'share') {
+        // 后续应实现：
+        // 1. 弹出分享弹窗
+        // 2. 生成分享链接（含有效期和权限设置）
+        // 3. 支持复制链接到剪贴板
+        console.log('分享:', fileId);
+      }
+
+      if (action === 'delete') {
+        // 后续应实现：
+        // 1. 弹出确认弹窗，提示"确定要删除 xxx 吗？"
+        // 2. 确认后调用删除 API
+        // 3. 从 DOM 中移除该行
+        // 4. 更新底部状态栏的文件计数和已用空间
+        const $row = $(this).closest('.file-row');
+        const fileName = $row.find('.text-sm.font-medium').text();
+        if (confirm('确定要删除「' + fileName + '」吗？此操作不可撤销。')) {
+          $row.fadeOut(300, function() { $(this).remove(); });
+        }
+      }
+    });
+
+    // === 文件夹行点击（进入文件夹） ===
+    $('#file-table-body').on('click', '.file-row[data-type="folder"]', function(e) {
+      // 避免点击操作按钮时触发
+      if ($(e.target).closest('.btn-file-action').length) return;
+      const folderId = $(this).data('id');
+      const folderName = $(this).find('.text-sm.font-medium').text();
+      // 后续应实现：
+      // 1. 更新面包屑导航，追加当前文件夹名称
+      // 2. 加载该文件夹下的文件列表
+      // 3. 更新页面内容
+      console.log('进入文件夹:', folderId, folderName);
+    });
+
+    // === 文件行点击（预览/下载） ===
+    $('#file-table-body').on('click', '.file-row[data-type="file"]', function(e) {
+      if ($(e.target).closest('.btn-file-action').length) return;
+      const fileId = $(this).data('id');
+      const fileName = $(this).find('.text-sm.font-medium').text();
+      // 后续应实现：
+      // 1. 根据文件类型打开预览（图片直接预览，文档用在线阅读器）
+      // 2. 不支持预览的文件类型直接触发下载
+      console.log('打开文件:', fileId, fileName);
+    });
+
+    // === 拖拽上传 ===
+    var dragCounter = 0;
+
+    $(document).on('dragenter', function(e) {
+      e.preventDefault();
+      dragCounter++;
+      $('#drop-zone').removeClass('hidden');
+    });
+
+    $(document).on('dragleave', function(e) {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        $('#drop-zone').addClass('hidden');
+      }
+    });
+
+    $(document).on('dragover', function(e) {
+      e.preventDefault();
+    });
+
+    $(document).on('drop', function(e) {
+      e.preventDefault();
+      dragCounter = 0;
+      $('#drop-zone').addClass('hidden');
+      // 后续应实现：
+      // 1. 获取 e.originalEvent.dataTransfer.files
+      // 2. 遍历文件列表，在表格顶部逐个添加上传中的文件行
+      // 3. 模拟上传进度
+      // 4. 上传完成后更新文件信息
+      var files = e.originalEvent.dataTransfer.files;
+      console.log('拖拽上传文件:', files.length + ' 个文件');
+    });
+
+    // === 通知按钮 ===
+    $('#btn-notification').on('click', function() {
+      // 后续应实现：弹出通知面板
+      console.log('查看通知');
+    });
+
+  });
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/inter.css" rel="stylesheet"/>
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/manrope.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #7C5CFF;
+      --color-primary-container:    #9B82FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #070A14;
+      --color-surface-container-lowest:   #0B0F1A;
+      --color-surface:                    #0F1420;
+      --color-surface-container:          #161B2E;
+      --color-surface-container-high:     #1C2338;
+      --color-surface-container-highest:  #232B45;
+      /* === 文字 === */
+      --color-on-surface:           #F7FAFF;
+      --color-on-surface-variant:   #9AA7C7;
+      /* === 功能色 === */
+      --color-success:  #62FAD3;
+      --color-error:    #FF5C5C;
+      --color-warning:  #FFB547;
+      /* === 强调色 === */
+      --color-accent:   #69E7FF;
+      /* === 边框 === */
+      --color-outline:          rgba(255,255,255,0.12);
+      --color-outline-variant:  rgba(255,255,255,0.06);
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.4);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.5);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.6);
+      /* === 字体 === */
+      --font-sans: "Inter", "Manrope", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @main-content:start -->
+  <main class="min-h-screen flex items-center justify-center relative overflow-hidden p-6">
+
+    <!-- 背景装饰光晕 -->
+    <div class="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full bg-accent/6 blur-[100px] pointer-events-none"></div>
+    <div class="absolute top-[40%] left-[50%] w-[400px] h-[400px] rounded-full bg-primary/5 blur-[80px] pointer-events-none"></div>
+
+    <!-- 主容器：左右两栏 -->
+    <div class="relative z-10 w-full max-w-5xl flex rounded-2xl overflow-hidden shadow-dialog"
+         style="min-height: 540px;">
+
+      <!-- 左侧：品牌信息区 -->
+      <div class="flex-1 flex flex-col justify-center px-12 py-10 relative"
+           style="background: linear-gradient(135deg, rgba(124,92,255,0.12) 0%, rgba(105,231,255,0.06) 100%); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.06);">
+
+        <!-- 品牌Logo -->
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+            <i data-lucide="cloud" class="w-5 h-5 text-primary"></i>
+          </div>
+          <span class="text-2xl font-bold tracking-tight text-on-surface">CloudOps</span>
+        </div>
+
+        <!-- Slogan -->
+        <h1 class="text-3xl font-bold leading-snug text-on-surface mb-3">
+          小团队的一体化<br>云运维平台
+        </h1>
+        <p class="text-sm text-on-surface-variant leading-relaxed mb-10">
+          云盘存储 · 服务器管理 · 存储节点，一站式解决运维需求
+        </p>
+
+        <!-- 功能亮点 -->
+        <div class="space-y-4">
+          <!-- 亮点-云盘存储 -->
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="hard-drive" class="w-4 h-4 text-primary"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-on-surface">云盘存储</h3>
+              <p class="text-xs text-on-surface-variant mt-0.5">安全可靠的文件存储与共享，支持多端同步</p>
+            </div>
+          </div>
+          <!-- 亮点-服务器管理 -->
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg bg-success/15 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="server" class="w-4 h-4 text-success"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-on-surface">服务器管理</h3>
+              <p class="text-xs text-on-surface-variant mt-0.5">实时监控与运维，一站式管理所有服务器实例</p>
+            </div>
+          </div>
+          <!-- 亮点-存储节点 -->
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center shrink-0 mt-0.5">
+              <i data-lucide="database" class="w-4 h-4 text-accent"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-on-surface">存储节点</h3>
+              <p class="text-xs text-on-surface-variant mt-0.5">分布式节点部署与调度，弹性扩缩容</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 底部装饰线 -->
+        <div class="absolute bottom-0 left-12 right-12 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
+      </div>
+
+      <!-- 右侧：登录表单卡片 -->
+      <div class="w-[420px] shrink-0 flex flex-col justify-center px-10 py-10"
+           style="background: rgba(15,20,32,0.75); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.06);">
+
+        <h2 class="text-xl font-bold text-on-surface mb-1">欢迎回来</h2>
+        <p class="text-sm text-on-surface-variant mb-8">登录 CloudOps 以继续</p>
+
+        <form id="login-form" autocomplete="off">
+          <!-- 用户名 -->
+          <div class="mb-5">
+            <label for="input-username" class="block text-sm font-medium text-on-surface mb-1.5">用户名</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 text-on-surface-variant/60 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input id="input-username" type="text" placeholder="请输入用户名"
+                     class="w-full bg-surface-container border-none rounded-lg pl-10 pr-3 py-2.5 text-sm
+                            text-on-surface placeholder:text-on-surface-variant/40
+                            focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+            </div>
+          </div>
+
+          <!-- 密码 -->
+          <div class="mb-5">
+            <label for="input-password" class="block text-sm font-medium text-on-surface mb-1.5">密码</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 text-on-surface-variant/60 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input id="input-password" type="password" placeholder="请输入密码"
+                     class="w-full bg-surface-container border-none rounded-lg pl-10 pr-10 py-2.5 text-sm
+                            text-on-surface placeholder:text-on-surface-variant/40
+                            focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              <button type="button" id="btn-toggle-password"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 hover:text-on-surface-variant transition-colors">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 记住登录 & 忘记密码 -->
+          <div class="flex items-center justify-between mb-8">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" id="chk-remember" class="w-4 h-4 rounded accent-primary"/>
+              <span class="text-sm text-on-surface-variant">记住登录</span>
+            </label>
+            <a href="javascript:void(0)" id="link-forgot-password" class="text-sm text-primary hover:text-primary-container transition-colors">忘记密码？</a>
+          </div>
+
+          <!-- 登录按钮 -->
+          <button type="submit" id="btn-login"
+                  class="w-full py-2.5 rounded-lg text-sm font-semibold text-on-primary
+                         hover:opacity-90 active:scale-[0.98] transition-all"
+                  style="background: linear-gradient(135deg, #7C5CFF 0%, #9B82FF 100%);">
+            登 录
+          </button>
+        </form>
+
+        <!-- 底部提示 -->
+        <p class="text-xs text-on-surface-variant/50 text-center mt-6">
+          登录即表示同意 <a href="javascript:void(0)" class="text-primary/70 hover:text-primary transition-colors">服务条款</a> 和 <a href="javascript:void(0)" class="text-primary/70 hover:text-primary transition-colors">隐私政策</a>
+        </p>
+      </div>
+    </div>
+  </main>
+  <!-- @main-content:end -->
+
+  <script>
+    $(function () {
+
+      // 密码显示/隐藏切换
+      $('#btn-toggle-password').on('click', function () {
+        var $input = $('#input-password');
+        var currentType = $input.attr('type');
+        if (currentType === 'password') {
+          $input.attr('type', 'text');
+          $(this).find('i').attr('data-lucide', 'eye-off');
+        } else {
+          $input.attr('type', 'password');
+          $(this).find('i').attr('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+      });
+
+      // 忘记密码 - 后续应实现密码找回流程
+      $('#link-forgot-password').on('click', function () {
+        console.log('忘记密码：后续应跳转到密码找回页面或弹出密码重置弹窗');
+      });
+
+      // 登录表单提交 - demo 项目不判断账密，直接跳转到仪表盘
+      $('#login-form').on('submit', function (e) {
+        e.preventDefault();
+        window.location.href = 'dashboard.html';
+      });
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

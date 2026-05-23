@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/inter.css" rel="stylesheet"/>
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/manrope.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #7C5CFF;
+      --color-primary-container:    #9B82FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #070A14;
+      --color-surface-container-lowest:   #0B0F1A;
+      --color-surface:                    #0F1420;
+      --color-surface-container:          #161B2E;
+      --color-surface-container-high:     #1C2338;
+      --color-surface-container-highest:  #232B45;
+      /* === 文字 === */
+      --color-on-surface:           #F7FAFF;
+      --color-on-surface-variant:   #9AA7C7;
+      /* === 功能色 === */
+      --color-success:  #62FAD3;
+      --color-error:    #FF5C5C;
+      --color-warning:  #FFB547;
+      /* === 强调色 === */
+      --color-accent:   #69E7FF;
+      /* === 边框 === */
+      --color-outline:          rgba(255,255,255,0.12);
+      --color-outline-variant:  rgba(255,255,255,0.06);
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.4);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.5);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.6);
+      /* === 字体 === */
+      --font-sans: "Inter", "Manrope", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start -->
+  <header class="bg-surface/80 backdrop-blur-xl border-b border-outline/20 sticky top-0 z-40 h-14 flex items-center justify-between px-5">
+    <div class="flex items-center gap-3">
+      <i data-lucide="cloud" class="text-primary w-5 h-5"></i>
+      <span class="font-bold text-base tracking-tight">CloudOps</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="relative text-on-surface-variant hover:text-on-surface transition-colors" id="btn-notification">
+        <i data-lucide="bell" class="w-4.5 h-4.5"></i>
+        <span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+      <div class="flex items-center gap-2 cursor-pointer">
+        <div class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">初</div>
+        <span class="text-sm text-on-surface-variant">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface-container-lowest/60 backdrop-blur-md border-r border-outline/20 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="dashboard">
+          <i data-lucide="gauge" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="cloud-drive.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="cloud-drive">
+          <i data-lucide="hard-drive" class="w-4 h-4"></i>云盘
+        </a>
+        <a href="servers.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="servers">
+          <i data-lucide="server" class="w-4 h-4"></i>服务器管理
+        </a>
+        <a href="storage-nodes.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="storage-nodes">
+          <i data-lucide="database" class="w-4 h-4"></i>存储节点
+        </a>
+        <a href="users.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="users">
+          <i data-lucide="users" class="w-4 h-4"></i>用户管理
+        </a>
+        <a href="settings.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm transition-all" aria-current="page" data-page="settings">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+    <!-- @nav:end -->
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+
+      <!-- 页面标题 -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">系统设置</h1>
+        <p class="text-sm text-on-surface-variant mt-1">管理 CloudOps 系统的全局配置参数</p>
+      </div>
+
+      <!-- 设置布局：左侧tab + 右侧内容 -->
+      <div class="flex gap-6">
+
+        <!-- 左侧设置导航tab -->
+        <nav class="w-48 shrink-0">
+          <div class="bg-surface/60 backdrop-blur-xl rounded-xl shadow-card p-2 space-y-0.5 sticky top-0">
+            <button id="tab-general" class="settings-tab active-tab flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-primary bg-primary/10" data-tab="general">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>基本设置
+            </button>
+            <button id="tab-security" class="settings-tab flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-on-surface-variant hover:bg-surface-container hover:text-on-surface" data-tab="security">
+              <i data-lucide="shield" class="w-4 h-4"></i>安全设置
+            </button>
+            <button id="tab-storage" class="settings-tab flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-on-surface-variant hover:bg-surface-container hover:text-on-surface" data-tab="storage">
+              <i data-lucide="database" class="w-4 h-4"></i>存储配置
+            </button>
+            <button id="tab-notification" class="settings-tab flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-on-surface-variant hover:bg-surface-container hover:text-on-surface" data-tab="notification">
+              <i data-lucide="bell-ring" class="w-4 h-4"></i>通知设置
+            </button>
+            <button id="tab-about" class="settings-tab flex items-center gap-2.5 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-on-surface-variant hover:bg-surface-container hover:text-on-surface" data-tab="about">
+              <i data-lucide="info" class="w-4 h-4"></i>关于系统
+            </button>
+          </div>
+        </nav>
+
+        <!-- 右侧内容区 -->
+        <div class="flex-1 min-w-0 space-y-6">
+
+          <!-- ====== 基本设置 ====== -->
+          <section id="panel-general" class="settings-panel">
+            <div class="bg-surface/60 backdrop-blur-xl rounded-xl shadow-card p-6">
+              <h2 class="text-base font-semibold text-on-surface mb-5 flex items-center gap-2">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-primary"></i>基本设置
+              </h2>
+              <div class="space-y-5">
+                <!-- 系统名称 -->
+                <div>
+                  <label for="input-system-name" class="block text-sm text-on-surface-variant mb-1.5">系统名称</label>
+                  <input id="input-system-name" type="text" value="CloudOps" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                </div>
+                <!-- 系统端口 -->
+                <div>
+                  <label for="input-system-port" class="block text-sm text-on-surface-variant mb-1.5">系统端口</label>
+                  <input id="input-system-port" type="text" value="4000" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                </div>
+                <!-- 默认存储配额 -->
+                <div>
+                  <label for="input-storage-quota" class="block text-sm text-on-surface-variant mb-1.5">默认存储配额</label>
+                  <div class="flex items-center gap-2">
+                    <input id="input-storage-quota" type="text" value="50" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    <span class="text-sm text-on-surface-variant">GB</span>
+                  </div>
+                </div>
+                <!-- 文件分片大小 -->
+                <div>
+                  <label for="select-chunk-size" class="block text-sm text-on-surface-variant mb-1.5">文件分片大小</label>
+                  <select id="select-chunk-size" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors appearance-none cursor-pointer">
+                    <option value="1">1MB</option>
+                    <option value="2">2MB</option>
+                    <option value="5" selected>5MB</option>
+                    <option value="10">10MB</option>
+                  </select>
+                </div>
+                <!-- 回收站保留天数 -->
+                <div>
+                  <label for="input-trash-days" class="block text-sm text-on-surface-variant mb-1.5">回收站保留天数</label>
+                  <div class="flex items-center gap-2">
+                    <input id="input-trash-days" type="text" value="30" class="w-32 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    <span class="text-sm text-on-surface-variant">天</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 保存按钮 -->
+              <div class="mt-6 pt-5 border-t border-outline-variant/20 flex justify-end">
+                <button id="btn-save-general" class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                  <i data-lucide="save" class="w-4 h-4"></i>保存设置
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ====== 安全设置 ====== -->
+          <section id="panel-security" class="settings-panel hidden">
+            <div class="bg-surface/60 backdrop-blur-xl rounded-xl shadow-card p-6">
+              <h2 class="text-base font-semibold text-on-surface mb-5 flex items-center gap-2">
+                <i data-lucide="shield" class="w-4 h-4 text-primary"></i>安全设置
+              </h2>
+              <div class="space-y-5">
+                <!-- 启用双因素认证 -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-on-surface">启用双因素认证</div>
+                    <div class="text-xs text-on-surface-variant mt-0.5">为用户登录添加额外的安全验证步骤</div>
+                  </div>
+                  <button id="switch-2fa" class="toggle-switch off w-11 h-6 rounded-full bg-surface-container-high relative cursor-pointer transition-colors" data-state="off" aria-label="双因素认证开关">
+                    <span class="toggle-dot absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-on-surface-variant transition-all"></span>
+                  </button>
+                </div>
+                <!-- IP白名单 -->
+                <div>
+                  <label for="textarea-ip-whitelist" class="block text-sm text-on-surface-variant mb-1.5">IP 白名单</label>
+                  <textarea id="textarea-ip-whitelist" rows="3" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none">192.168.1.0/24, 10.0.0.0/8</textarea>
+                  <p class="text-xs text-on-surface-variant/60 mt-1">每行一个 IP 段，支持 CIDR 格式</p>
+                </div>
+                <!-- 会话超时 -->
+                <div>
+                  <label for="select-session-timeout" class="block text-sm text-on-surface-variant mb-1.5">会话超时</label>
+                  <select id="select-session-timeout" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors appearance-none cursor-pointer">
+                    <option value="15">15 分钟</option>
+                    <option value="30" selected>30 分钟</option>
+                    <option value="60">60 分钟</option>
+                    <option value="120">120 分钟</option>
+                  </select>
+                </div>
+              </div>
+              <!-- 保存按钮 -->
+              <div class="mt-6 pt-5 border-t border-outline-variant/20 flex justify-end">
+                <button id="btn-save-security" class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                  <i data-lucide="save" class="w-4 h-4"></i>保存设置
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ====== 存储配置 ====== -->
+          <section id="panel-storage" class="settings-panel hidden">
+            <div class="bg-surface/60 backdrop-blur-xl rounded-xl shadow-card p-6">
+              <h2 class="text-base font-semibold text-on-surface mb-5 flex items-center gap-2">
+                <i data-lucide="database" class="w-4 h-4 text-primary"></i>存储配置
+              </h2>
+              <div class="space-y-5">
+                <!-- 默认副本数 -->
+                <div>
+                  <label for="select-replica-count" class="block text-sm text-on-surface-variant mb-1.5">默认副本数</label>
+                  <select id="select-replica-count" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors appearance-none cursor-pointer">
+                    <option value="1" selected>1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                  </select>
+                </div>
+                <!-- 自动迁移 -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-on-surface">自动迁移</div>
+                    <div class="text-xs text-on-surface-variant mt-0.5">当存储节点故障时自动迁移数据到健康节点</div>
+                  </div>
+                  <button id="switch-auto-migrate" class="toggle-switch on w-11 h-6 rounded-full bg-primary relative cursor-pointer transition-colors" data-state="on" aria-label="自动迁移开关">
+                    <span class="toggle-dot absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white transition-all"></span>
+                  </button>
+                </div>
+                <!-- 数据目录 -->
+                <div>
+                  <label for="input-data-dir" class="block text-sm text-on-surface-variant mb-1.5">数据目录</label>
+                  <input id="input-data-dir" type="text" value="/data/cloudops" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                </div>
+              </div>
+              <!-- 保存按钮 -->
+              <div class="mt-6 pt-5 border-t border-outline-variant/20 flex justify-end">
+                <button id="btn-save-storage" class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                  <i data-lucide="save" class="w-4 h-4"></i>保存设置
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ====== 通知设置 ====== -->
+          <section id="panel-notification" class="settings-panel hidden">
+            <div class="bg-surface/60 backdrop-blur-xl rounded-xl shadow-card p-6">
+              <h2 class="text-base font-semibold text-on-surface mb-5 flex items-center gap-2">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-primary"></i>通知设置
+              </h2>
+              <div class="space-y-5">
+                <!-- 告警邮件通知 -->
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-on-surface">告警邮件通知</div>
+                    <div class="text-xs text-on-surface-variant mt-0.5">当系统资源超过阈值时发送邮件告警</div>
+                  </div>
+                  <button id="switch-alert-email" class="toggle-switch on w-11 h-6 rounded-full bg-primary relative cursor-pointer transition-colors" data-state="on" aria-label="告警邮件通知开关">
+                    <span class="toggle-dot absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-white transition-all"></span>
+                  </button>
+                </div>
+                <!-- SMTP服务器 -->
+                <div>
+                  <label for="input-smtp-server" class="block text-sm text-on-surface-variant mb-1.5">SMTP 服务器</label>
+                  <input id="input-smtp-server" type="text" value="smtp.example.com" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                </div>
+                <!-- 告警阈值 -->
+                <div>
+                  <label class="block text-sm text-on-surface-variant mb-3">告警阈值</label>
+                  <div class="grid grid-cols-3 gap-4">
+                    <div>
+                      <div class="text-xs text-on-surface-variant mb-1.5">CPU</div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-on-surface-variant">&gt;</span>
+                        <input id="input-alert-cpu" type="text" value="90" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                        <span class="text-xs text-on-surface-variant">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-on-surface-variant mb-1.5">内存</div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-on-surface-variant">&gt;</span>
+                        <input id="input-alert-memory" type="text" value="85" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                        <span class="text-xs text-on-surface-variant">%</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-on-surface-variant mb-1.5">磁盘</div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="text-xs text-on-surface-variant">&gt;</span>
+                        <input id="input-alert-disk" type="text" value="90" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                        <span class="text-xs text-on-surface-variant">%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 保存按钮 -->
+              <div class="mt-6 pt-5 border-t border-outline-variant/20 flex justify-end">
+                <button id="btn-save-notification" class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                  <i data-lucide="save" class="w-4 h-4"></i>保存设置
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- ====== 关于系统 ====== -->
+          <section id="panel-about" class="settings-panel hidden">
+            <div class="bg-surface/60 backdrop-blur-xl rounded-xl shadow-card p-6">
+              <h2 class="text-base font-semibold text-on-surface mb-5 flex items-center gap-2">
+                <i data-lucide="info" class="w-4 h-4 text-primary"></i>关于系统
+              </h2>
+              <div class="space-y-4">
+                <!-- 版本号 -->
+                <div class="flex items-center justify-between py-3 border-b border-outline-variant/20">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <i data-lucide="tag" class="w-4 h-4 text-primary"></i>
+                    </div>
+                    <span class="text-sm text-on-surface-variant">版本号</span>
+                  </div>
+                  <span class="text-sm font-medium text-on-surface">v1.0.0</span>
+                </div>
+                <!-- 构建日期 -->
+                <div class="flex items-center justify-between py-3 border-b border-outline-variant/20">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                      <i data-lucide="calendar" class="w-4 h-4 text-accent"></i>
+                    </div>
+                    <span class="text-sm text-on-surface-variant">构建日期</span>
+                  </div>
+                  <span class="text-sm font-medium text-on-surface">2024-01-15</span>
+                </div>
+                <!-- 开源协议 -->
+                <div class="flex items-center justify-between py-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                      <i data-lucide="scale" class="w-4 h-4 text-success"></i>
+                    </div>
+                    <span class="text-sm text-on-surface-variant">开源协议</span>
+                  </div>
+                  <span class="text-sm font-medium text-on-surface">MIT</span>
+                </div>
+              </div>
+              <!-- 系统信息底部 -->
+              <div class="mt-6 pt-5 border-t border-outline-variant/20">
+                <div class="bg-surface-container rounded-lg p-4">
+                  <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
+                      <i data-lucide="cloud" class="w-5 h-5 text-on-primary"></i>
+                    </div>
+                    <div>
+                      <div class="text-sm font-semibold text-on-surface">CloudOps</div>
+                      <div class="text-xs text-on-surface-variant">云运维管理平台</div>
+                    </div>
+                  </div>
+                  <p class="text-xs text-on-surface-variant/70 leading-relaxed">CloudOps 是一款开源的云运维管理平台，提供服务器管理、云盘存储、监控告警等一站式运维解决方案。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </main>
+    <!-- @main-content:end -->
+  </div>
+
+  <script>
+  $(function() {
+
+    // Tab 切换交互
+    $('.settings-tab').on('click', function() {
+      const tab = $(this).data('tab');
+
+      // 更新 tab 样式
+      $('.settings-tab').removeClass('active-tab text-primary bg-primary/10').addClass('text-on-surface-variant');
+      $(this).addClass('active-tab text-primary bg-primary/10').removeClass('text-on-surface-variant');
+
+      // 切换面板
+      $('.settings-panel').addClass('hidden');
+      $('#panel-' + tab).removeClass('hidden');
+    });
+
+    // 开关交互
+    $('.toggle-switch').on('click', function() {
+      const state = $(this).data('state');
+      const $dot = $(this).find('.toggle-dot');
+
+      if (state === 'off') {
+        $(this).data('state', 'on');
+        $(this).removeClass('bg-surface-container-high').addClass('bg-primary');
+        $dot.removeClass('left-0.5 bg-on-surface-variant').addClass('right-0.5 bg-white');
+        // 修正 dot 位置：移除左定位，添加右定位
+        $dot.css({ left: '', right: '2px' });
+      } else {
+        $(this).data('state', 'off');
+        $(this).removeClass('bg-primary').addClass('bg-surface-container-high');
+        $dot.removeClass('right-0.5 bg-white').addClass('left-0.5 bg-on-surface-variant');
+        $dot.css({ right: '', left: '2px' });
+      }
+    });
+
+    // 保存按钮交互 - 显示保存成功提示
+    $('[id^="btn-save"]').on('click', function() {
+      const $btn = $(this);
+      const originalHtml = $btn.html();
+
+      // 按钮变为已保存状态
+      $btn.html('<i data-lucide="check" class="w-4 h-4"></i>已保存');
+      $btn.removeClass('from-primary to-primary-container').addClass('from-success to-success');
+      lucide.createIcons();
+
+      // 1.5秒后恢复原状
+      setTimeout(function() {
+        $btn.html(originalHtml);
+        $btn.removeClass('from-success to-success').addClass('from-primary to-primary-container');
+        lucide.createIcons();
+      }, 1500);
+    });
+
+  });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

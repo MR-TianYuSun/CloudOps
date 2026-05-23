@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/inter.css" rel="stylesheet"/>
+  <link href="https://lf-code-agent.coze.cn/obj/x-ai-cn/fonts/google/manrope.css" rel="stylesheet"/>
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide.1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #7C5CFF;
+      --color-primary-container:    #9B82FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #070A14;
+      --color-surface-container-lowest:   #0B0F1A;
+      --color-surface:                    #0F1420;
+      --color-surface-container:          #161B2E;
+      --color-surface-container-high:     #1C2338;
+      --color-surface-container-highest:  #232B45;
+      /* === 文字 === */
+      --color-on-surface:           #F7FAFF;
+      --color-on-surface-variant:   #9AA7C7;
+      /* === 功能色 === */
+      --color-success:  #62FAD3;
+      --color-error:    #FF5C5C;
+      --color-warning:  #FFB547;
+      /* === 强调色 === */
+      --color-accent:   #69E7FF;
+      /* === 边框 === */
+      --color-outline:          rgba(255,255,255,0.12);
+      --color-outline-variant:  rgba(255,255,255,0.06);
+      /* === 圆角 === */
+      --radius-sm:   0.375rem;
+      --radius-md:   0.5rem;
+      --radius-lg:   0.75rem;
+      --radius-xl:   1rem;
+      --radius-2xl:  1.5rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.4);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.5);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.6);
+      /* === 字体 === */
+      --font-sans: "Inter", "Manrope", system-ui, sans-serif;
+    }
+
+    /* 在线状态脉冲动画 */
+    @keyframes pulse-online {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.8); }
+    }
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 9999px;
+      background: inherit;
+      animation: pulse-online 2s ease-in-out infinite;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start -->
+  <header class="bg-surface/80 backdrop-blur-xl border-b border-outline/20 sticky top-0 z-40 h-14 flex items-center justify-between px-5">
+    <div class="flex items-center gap-3">
+      <i data-lucide="cloud" class="text-primary w-5 h-5"></i>
+      <span class="font-bold text-base tracking-tight">CloudOps</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="relative text-on-surface-variant hover:text-on-surface transition-colors" id="btn-notification">
+        <i data-lucide="bell" class="w-4.5 h-4.5"></i>
+        <span class="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full"></span>
+      </button>
+      <div class="flex items-center gap-2 cursor-pointer">
+        <div class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">初</div>
+        <span class="text-sm text-on-surface-variant">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface-container-lowest/60 backdrop-blur-md border-r border-outline/20 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="dashboard">
+          <i data-lucide="gauge" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="cloud-drive.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="cloud-drive">
+          <i data-lucide="hard-drive" class="w-4 h-4"></i>云盘
+        </a>
+        <a href="servers.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm transition-all" data-page="servers" aria-current="page">
+          <i data-lucide="server" class="w-4 h-4"></i>服务器管理
+        </a>
+        <a href="storage-nodes.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="storage-nodes">
+          <i data-lucide="database" class="w-4 h-4"></i>存储节点
+        </a>
+        <a href="users.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="users">
+          <i data-lucide="users" class="w-4 h-4"></i>用户管理
+        </a>
+        <a href="settings.html" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-all" data-page="settings">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+    <!-- @nav:end -->
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+
+      <!-- 顶部工具栏 -->
+      <div class="flex items-center justify-between mb-6">
+        <!-- 左侧：标题 + 统计 -->
+        <div class="flex items-center gap-3">
+          <h1 class="text-2xl font-bold text-on-surface">服务器管理</h1>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/15 text-primary">8 台</span>
+        </div>
+        <!-- 右侧：添加按钮 + 筛选 + 搜索 -->
+        <div class="flex items-center gap-3">
+          <button id="btn-add-server" class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2 shadow-float">
+            <i data-lucide="plus" class="w-4 h-4"></i>添加服务器
+          </button>
+          <div class="relative">
+            <select id="filter-env" class="appearance-none bg-surface-container border-none rounded-lg px-3 py-2 pr-8 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors cursor-pointer">
+              <option value="all">全部环境</option>
+              <option value="prod">生产环境</option>
+              <option value="test">测试环境</option>
+              <option value="dev">开发环境</option>
+            </select>
+            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-on-surface-variant absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          </div>
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-on-surface-variant/50 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            <input id="search-server" type="text" placeholder="搜索服务器..." class="bg-surface-container border-none rounded-lg pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors w-48" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 服务器卡片网格 -->
+      <div id="server-grid" class="grid grid-cols-2 gap-4">
+
+        <!-- 列表-服务器1: prod-server-01 -->
+        <div class="server-card bg-surface/60 backdrop-blur-xl border border-outline/20 rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" data-env="prod" data-name="prod-server-01" data-id="1">
+          <!-- 卡片头部：名称 + 状态 -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+                <i data-lucide="server" class="w-4.5 h-4.5 text-primary"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-on-surface">prod-server-01</h3>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <i data-lucide="monitor" class="w-3 h-3 text-on-surface-variant/70"></i>
+                  <span class="text-xs text-on-surface-variant">Ubuntu 22.04</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="relative w-2 h-2 rounded-full bg-success pulse-dot"></span>
+              <span class="text-xs font-medium text-success">在线</span>
+            </div>
+          </div>
+
+          <!-- 环境标签 + 业务标签 -->
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">生产环境</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">Web服务</span>
+          </div>
+
+          <!-- 资源使用率 -->
+          <div class="space-y-2.5 mb-4">
+            <!-- CPU -->
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">CPU</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-primary rounded-full transition-all" style="width: 45%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">45%</span>
+            </div>
+            <!-- 内存 -->
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">内存</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-warning rounded-full transition-all" style="width: 72%"></div>
+              </div>
+              <span class="text-xs font-medium text-warning w-8 text-right">72%</span>
+            </div>
+            <!-- 磁盘 -->
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">磁盘</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 58%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">58%</span>
+            </div>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div class="flex items-center gap-2 pt-3 border-t border-outline/10">
+            <button class="btn-ssh flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="1">
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>SSH
+            </button>
+            <button class="btn-detail flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="1">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>详情
+            </button>
+            <button class="btn-more flex items-center justify-center py-1.5 px-2.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="1">
+              <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 列表-服务器2: prod-server-02 -->
+        <div class="server-card bg-surface/60 backdrop-blur-xl border border-outline/20 rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" data-env="prod" data-name="prod-server-02" data-id="2">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+                <i data-lucide="server" class="w-4.5 h-4.5 text-primary"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-on-surface">prod-server-02</h3>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <i data-lucide="monitor" class="w-3 h-3 text-on-surface-variant/70"></i>
+                  <span class="text-xs text-on-surface-variant">Ubuntu 22.04</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="relative w-2 h-2 rounded-full bg-success pulse-dot"></span>
+              <span class="text-xs font-medium text-success">在线</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">生产环境</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">数据库</span>
+          </div>
+
+          <div class="space-y-2.5 mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">CPU</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 12%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">12%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">内存</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 34%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">34%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">磁盘</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 45%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">45%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-3 border-t border-outline/10">
+            <button class="btn-ssh flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="2">
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>SSH
+            </button>
+            <button class="btn-detail flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="2">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>详情
+            </button>
+            <button class="btn-more flex items-center justify-center py-1.5 px-2.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="2">
+              <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 列表-服务器3: win-server-01 -->
+        <div class="server-card bg-surface/60 backdrop-blur-xl border border-outline/20 rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" data-env="prod" data-name="win-server-01" data-id="3">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center">
+                <i data-lucide="monitor" class="w-4.5 h-4.5 text-accent"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-on-surface">win-server-01</h3>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <i data-lucide="layout-grid" class="w-3 h-3 text-on-surface-variant/70"></i>
+                  <span class="text-xs text-on-surface-variant">Windows Server 2022</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="relative w-2 h-2 rounded-full bg-success pulse-dot"></span>
+              <span class="text-xs font-medium text-success">在线</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">生产环境</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">文件服务</span>
+          </div>
+
+          <div class="space-y-2.5 mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">CPU</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-primary rounded-full transition-all" style="width: 38%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">38%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">内存</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-warning rounded-full transition-all" style="width: 56%"></div>
+              </div>
+              <span class="text-xs font-medium text-warning w-8 text-right">56%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">磁盘</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-warning rounded-full transition-all" style="width: 62%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">62%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-3 border-t border-outline/10">
+            <button class="btn-ssh flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="3">
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>SSH
+            </button>
+            <button class="btn-detail flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="3">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>详情
+            </button>
+            <button class="btn-more flex items-center justify-center py-1.5 px-2.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="3">
+              <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 列表-服务器4: test-server-01 -->
+        <div class="server-card bg-surface/60 backdrop-blur-xl border border-outline/20 rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" data-env="test" data-name="test-server-01" data-id="4">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center">
+                <i data-lucide="server" class="w-4.5 h-4.5 text-primary"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-on-surface">test-server-01</h3>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <i data-lucide="monitor" class="w-3 h-3 text-on-surface-variant/70"></i>
+                  <span class="text-xs text-on-surface-variant">CentOS 7</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="relative w-2 h-2 rounded-full bg-success pulse-dot"></span>
+              <span class="text-xs font-medium text-success">在线</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">测试环境</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">CI/CD</span>
+          </div>
+
+          <div class="space-y-2.5 mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">CPU</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 8%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">8%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">内存</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 22%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">22%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">磁盘</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 30%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">30%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-3 border-t border-outline/10">
+            <button class="btn-ssh flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="4">
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>SSH
+            </button>
+            <button class="btn-detail flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="4">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>详情
+            </button>
+            <button class="btn-more flex items-center justify-center py-1.5 px-2.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="4">
+              <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 列表-服务器5: dev-server-01 (离线) -->
+        <div class="server-card bg-surface/60 backdrop-blur-xl border border-outline/20 rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group opacity-70" data-env="dev" data-name="dev-server-01" data-id="5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center">
+                <i data-lucide="server" class="w-4.5 h-4.5 text-on-surface-variant/50"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-on-surface">dev-server-01</h3>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <i data-lucide="monitor" class="w-3 h-3 text-on-surface-variant/70"></i>
+                  <span class="text-xs text-on-surface-variant">Ubuntu 20.04</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-on-surface-variant/30"></span>
+              <span class="text-xs font-medium text-on-surface-variant/50">离线</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">开发环境</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">开发</span>
+          </div>
+
+          <div class="space-y-2.5 mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">CPU</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-on-surface-variant/20 rounded-full transition-all" style="width: 0%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface-variant/50 w-8 text-right">0%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">内存</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-on-surface-variant/20 rounded-full transition-all" style="width: 0%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface-variant/50 w-8 text-right">0%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">磁盘</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-on-surface-variant/20 rounded-full transition-all" style="width: 45%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface-variant/50 w-8 text-right">45%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-3 border-t border-outline/10">
+            <button class="btn-ssh flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container text-on-surface-variant/40 cursor-not-allowed" data-id="5" disabled>
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>SSH
+            </button>
+            <button class="btn-detail flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="5">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>详情
+            </button>
+            <button class="btn-more flex items-center justify-center py-1.5 px-2.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="5">
+              <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 列表-服务器6: win-dev-01 -->
+        <div class="server-card bg-surface/60 backdrop-blur-xl border border-outline/20 rounded-xl p-5 hover:border-primary/30 transition-all cursor-pointer group" data-env="dev" data-name="win-dev-01" data-id="6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-accent/15 flex items-center justify-center">
+                <i data-lucide="monitor" class="w-4.5 h-4.5 text-accent"></i>
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-on-surface">win-dev-01</h3>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <i data-lucide="layout-grid" class="w-3 h-3 text-on-surface-variant/70"></i>
+                  <span class="text-xs text-on-surface-variant">Windows 11</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="relative w-2 h-2 rounded-full bg-success pulse-dot"></span>
+              <span class="text-xs font-medium text-success">在线</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-4">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">开发环境</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">设计</span>
+          </div>
+
+          <div class="space-y-2.5 mb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">CPU</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 25%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">25%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">内存</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-primary rounded-full transition-all" style="width: 48%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">48%</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-xs text-on-surface-variant w-10 shrink-0">磁盘</span>
+              <div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full transition-all" style="width: 35%"></div>
+              </div>
+              <span class="text-xs font-medium text-on-surface w-8 text-right">35%</span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 pt-3 border-t border-outline/10">
+            <button class="btn-ssh flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="6">
+              <i data-lucide="terminal" class="w-3.5 h-3.5"></i>SSH
+            </button>
+            <button class="btn-detail flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="6">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>详情
+            </button>
+            <button class="btn-more flex items-center justify-center py-1.5 px-2.5 rounded-md text-xs font-medium bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface transition-all" data-id="6">
+              <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+      <!-- /server-grid -->
+
+    </main>
+    <!-- @main-content:end -->
+  </div>
+
+  <script>lucide.createIcons();</script>
+
+  <script>
+  $(function() {
+
+    // 环境筛选
+    $('#filter-env').on('change', function() {
+      var env = $(this).val();
+      if (env === 'all') {
+        $('.server-card').show();
+      } else {
+        $('.server-card').each(function() {
+          if ($(this).data('env') === env) {
+            $(this).show();
+          } else {
+            $(this).hide();
+          }
+        });
+      }
+    });
+
+    // 搜索服务器
+    $('#search-server').on('input', function() {
+      var keyword = $(this).val().toLowerCase().trim();
+      if (!keyword) {
+        $('.server-card').show();
+        return;
+      }
+      $('.server-card').each(function() {
+        var name = ($(this).data('name') || '').toLowerCase();
+        if (name.indexOf(keyword) !== -1) {
+          $(this).show();
+        } else {
+          $(this).hide();
+        }
+      });
+    });
+
+    // 点击卡片跳转详情
+    $('#server-grid').on('click', '.server-card', function(e) {
+      // 如果点击的是按钮区域，不触发卡片跳转
+      if ($(e.target).closest('button').length) return;
+      var id = $(this).data('id');
+      window.location.href = 'server-detail.html?id=' + id;
+    });
+
+    // SSH连接按钮
+    $('#server-grid').on('click', '.btn-ssh', function(e) {
+      e.stopPropagation();
+      var id = $(this).data('id');
+      // SSH连接 - 点击后应实现：
+      // 1. 打开一个终端模拟器模态框
+      // 2. 建立WebSocket连接到服务器
+      // 3. 显示SSH终端交互界面
+      console.log('SSH连接到服务器 ID:', id);
+    });
+
+    // 详情按钮
+    $('#server-grid').on('click', '.btn-detail', function(e) {
+      e.stopPropagation();
+      var id = $(this).data('id');
+      window.location.href = 'server-detail.html?id=' + id;
+    });
+
+    // 更多按钮
+    $('#server-grid').on('click', '.btn-more', function(e) {
+      e.stopPropagation();
+      var id = $(this).data('id');
+      // 更多操作 - 点击后应实现：
+      // 1. 显示下拉菜单，包含：重启服务器、停止服务器、编辑配置、查看日志、删除服务器
+      // 2. 每个选项点击后触发对应操作
+      // 3. 危险操作（删除）需二次确认
+      console.log('更多操作，服务器 ID:', id);
+    });
+
+    // 添加服务器按钮
+    $('#btn-add-server').on('click', function() {
+      // 添加服务器 - 点击后应实现：
+      // 1. 弹出模态框，包含表单：服务器名称、IP地址、操作系统选择、环境选择、标签
+      // 2. 填写完成后点击确认，调用API创建服务器
+      // 3. 创建成功后刷新列表
+      console.log('添加服务器');
+    });
+
+    // 通知按钮
+    $('#btn-notification').on('click', function() {
+      console.log('查看通知');
+    });
+
+  });
+  </script>
+
+</body>
+
+</html>
