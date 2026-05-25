@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, buildFilePath, updatePathRecursive } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
 /** POST /api/files/move - 移动/复制文件 */
@@ -56,14 +56,15 @@ export async function POST(request: NextRequest) {
     }
 
     if (actualAction === 'move') {
-      const stmt = db.prepare(`UPDATE files SET parent_id = ?, updated_at = datetime('now') WHERE id = ? AND deleted_at IS NULL`);
       const transaction = db.transaction(() => {
         for (const fileId of actualFileIds) {
           const file = db.prepare('SELECT * FROM files WHERE id = ?').get(fileId) as Record<string, unknown> | undefined;
           if (!file) continue;
           if (payload.role !== 'admin' && Number(file.uploaded_by) !== payload.userId) continue;
           const resolvedTargetId = actualTargetId === 0 ? null : actualTargetId;
-          stmt.run(resolvedTargetId, fileId);
+          db.prepare('UPDATE files SET parent_id = ?, updated_at = datetime(\'now\') WHERE id = ? AND deleted_at IS NULL').run(resolvedTargetId, fileId);
+          // 递归更新 path
+          updatePathRecursive(db, fileId);
         }
       });
       transaction();
@@ -110,10 +111,11 @@ function copyFileRecursive(
 
   if (file.is_folder) {
     // 复制文件夹
+    const folderPath = buildFilePath(db, `${file.name} (副本)`, targetParentId);
     const result = db.prepare(`
       INSERT INTO files (name, is_folder, size, mime_type, file_ext, file_category, parent_id, path, uploaded_by, owner_type, created_at, updated_at)
-      VALUES (?, 1, 0, NULL, NULL, 'folder', ?, '/', ?, 'personal', ?, ?)
-    `).run(`${file.name} (副本)`, targetParentId, userId, now, now);
+      VALUES (?, 1, 0, NULL, NULL, 'folder', ?, ?, ?, 'personal', ?, ?)
+    `).run(`${file.name} (副本)`, targetParentId, folderPath, userId, now, now);
 
     const newFolderId = result.lastInsertRowid as number;
     const children = db.prepare('SELECT * FROM files WHERE parent_id = ? AND deleted_at IS NULL').all(file.id) as Record<string, unknown>[];
@@ -122,12 +124,13 @@ function copyFileRecursive(
     }
   } else {
     // 复制文件 - 在数据库中创建新记录，指向同一磁盘文件
+    const filePath = buildFilePath(db, file.name as string, targetParentId);
     db.prepare(`
       INSERT INTO files (name, is_folder, size, mime_type, file_ext, file_category, parent_id, storage_path, path, uploaded_by, owner_type, created_at, updated_at)
-      VALUES (?, 0, ?, ?, ?, ?, ?, ?, '/', ?, 'personal', ?, ?)
+      VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?, 'personal', ?, ?)
     `).run(
       file.name, file.size, file.mime_type, file.file_ext, file.file_category,
-      targetParentId, file.storage_path, userId, now, now
+      targetParentId, file.storage_path, filePath, userId, now, now
     );
   }
 }

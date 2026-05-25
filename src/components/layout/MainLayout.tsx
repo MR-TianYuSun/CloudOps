@@ -6,10 +6,11 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, HardDrive, Users as UsersIcon, Settings,
   Server, ChevronLeft, ChevronRight, LogOut, Menu, X,
-  Cloud, Folder,
+  Cloud, Folder, Monitor,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
+  { href: '/desktop', label: '桌面', icon: Monitor },
   { href: '/dashboard', label: '仪表盘', icon: LayoutDashboard },
   { href: '/cloud-drive', label: '云盘', icon: Cloud },
   { href: '/teams', label: '团队空间', icon: Folder },
@@ -29,16 +30,18 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<UserInfo | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const pathname = usePathname();
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   useEffect(() => {
-    if (!token) { window.location.href = '/login'; return; }
-    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+    const t = localStorage.getItem('token');
+    setToken(t);
+    if (!t) { window.location.href = '/login'; return; }
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${t}` } })
       .then(r => r.json())
       .then(data => { if (data.code === 200) setUser(data.data); })
       .catch(() => {});
-  }, [token]);
+  }, []);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -49,7 +52,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   // 移动端点击导航后关闭菜单
   const handleNavClick = () => {
-    if (window.innerWidth < 1024) setMobileOpen(false);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) setMobileOpen(false);
   };
 
   return (

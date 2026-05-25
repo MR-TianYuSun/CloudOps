@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, getUploadDir, buildFilePath } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { getCategoryByExt, getPreviewType } from '@/lib/file-types';
+import { getCategoryByExt, getPreviewType, getFileCategory, getFileExt, getMimeType } from '@/lib/file-types';
 
 // GET /api/teams/[id]/files — 获取团队文件列表
 export async function GET(
@@ -38,6 +38,7 @@ export async function GET(
       LEFT JOIN users u ON f.uploaded_by = u.id
       WHERE f.owner_type = 'team' AND f.team_id = ?
         AND f.parent_id IS ?
+        AND f.deleted_at IS NULL
       ORDER BY f.is_folder DESC, f.created_at DESC
     `).all(id, parentIdValue);
 
@@ -97,27 +98,31 @@ export async function POST(
     const parentId = parentIdStr && parentIdStr !== '0' ? Number(parentIdStr) : null;
 
     // 保存文件到磁盘
-    const uploadsDir = path.join(process.cwd(), 'data', 'uploads');
+    const uploadsDir = getUploadDir();
     await mkdir(uploadsDir, { recursive: true });
 
-    const fileExt = path.extname(file.name).toLowerCase();
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${fileExt}`;
-    const filePath = path.join(uploadsDir, uniqueName);
+    const ext = getFileExt(file.name);
+    const storageName = `${Date.now()}--${file.name}`;
+    const storagePath = path.join(uploadsDir, storageName);
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
+    await writeFile(storagePath, buffer);
+
+    // 构建虚拟路径
+    const filePath = buildFilePath(db, file.name, parentId);
 
     // 写入数据库（storage_path 存完整绝对路径，与个人上传一致）
     const result = db.prepare(`
-      INSERT INTO files (name, path, is_folder, size, mime_type, file_ext, storage_path, uploaded_by, owner_type, team_id, parent_id)
-      VALUES (?, ?, 0, ?, ?, ?, ?, ?, 'team', ?, ?)
+      INSERT INTO files (name, path, is_folder, size, mime_type, file_ext, file_category, storage_path, uploaded_by, owner_type, team_id, parent_id)
+      VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, 'team', ?, ?)
     `).run(
       file.name,
-      `/${uniqueName}`,
-      file.size,
-      file.type || 'application/octet-stream',
-      fileExt.replace('.', '') || null,
       filePath,
+      file.size,
+      getMimeType(file.name),
+      ext,
+      getFileCategory(file.name),
+      storagePath,
       payload.userId,
       id,
       parentId,

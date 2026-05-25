@@ -1,17 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
-import { getFileCategory, getFileExt, getMimeType, formatFileSize } from '@/lib/file-types';
-import path from 'path';
-import fs from 'fs';
-
-const UPLOAD_DIR = path.join(process.cwd(), 'data', 'uploads');
-
-function ensureUploadDir() {
-  if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-  }
-}
+import { formatFileSize } from '@/lib/file-types';
 
 /** GET /api/files - 文件列表 */
 export async function GET(request: NextRequest) {
@@ -34,7 +24,7 @@ export async function GET(request: NextRequest) {
     // 排除回收站中的文件
     const notDeleted = 'AND f.deleted_at IS NULL';
 
-    // 管理员可看所有文件，普通用户只看自己上传的
+    // 管理员可看所有文件；普通用户看自己上传的 + 所属团队文件
     let files: unknown[];
     if (payload.role === 'admin') {
       files = db.prepare(`
@@ -49,9 +39,13 @@ export async function GET(request: NextRequest) {
         SELECT f.*, u.display_name as uploader_name
         FROM files f
         LEFT JOIN users u ON f.uploaded_by = u.id
-        WHERE f.uploaded_by = ? AND f.parent_id ${parentId ? '= ?' : 'IS NULL'} ${notDeleted}
+        WHERE f.parent_id ${parentId ? '= ?' : 'IS NULL'} ${notDeleted}
+          AND (
+            f.uploaded_by = ?
+            OR (f.owner_type = 'team' AND f.team_id IN (SELECT team_id FROM team_members WHERE user_id = ?))
+          )
         ORDER BY f.is_folder DESC, f.name ASC
-      `).all(...(parentId ? [payload.userId, parentId] : [payload.userId]));
+      `).all(...(parentId ? [parentId, payload.userId, payload.userId] : [payload.userId, payload.userId]));
     }
 
     return NextResponse.json({

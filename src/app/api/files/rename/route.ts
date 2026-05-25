@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { getDb, buildFilePath, updatePathRecursive } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { getFileCategory, getFileExt, getMimeType } from '@/lib/file-types';
 
@@ -29,13 +29,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ code: 404, message: '文件不存在', data: null }, { status: 404 });
     }
 
-    const ext = getFileExt(name);
-    const category = getFileCategory(name);
-    const mimeType = getMimeType(name);
+    const newName = name.trim();
+    const ext = getFileExt(newName);
+    const category = getFileCategory(newName);
+    const mimeType = getMimeType(newName);
 
+    // 更新名称及相关字段
     db.prepare(`
       UPDATE files SET name = ?, file_ext = ?, file_category = ?, mime_type = ?, updated_at = datetime('now') WHERE id = ?
-    `).run(name.trim(), ext, category, mimeType, id);
+    `).run(newName, ext, category, mimeType, id);
+
+    // 重新计算 path 并递归更新子项
+    updatePathRecursive(db, Number(id));
 
     return NextResponse.json({ code: 200, message: '重命名成功', data: null });
   } catch {

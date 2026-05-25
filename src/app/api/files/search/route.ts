@@ -30,21 +30,21 @@ export async function GET(request: NextRequest) {
       files = db.prepare(`
         SELECT f.*, u.display_name as uploader_name
         FROM files f LEFT JOIN users u ON f.uploaded_by = u.id
-        WHERE f.name LIKE ? AND f.file_category = ?
+        WHERE f.name LIKE ? AND f.file_category = ? AND f.deleted_at IS NULL
         ORDER BY f.is_folder DESC, f.name ASC
       `).all(`%${query}%`, category) as Record<string, unknown>[];
     } else if (query) {
       files = db.prepare(`
         SELECT f.*, u.display_name as uploader_name
         FROM files f LEFT JOIN users u ON f.uploaded_by = u.id
-        WHERE f.name LIKE ?
+        WHERE f.name LIKE ? AND f.deleted_at IS NULL
         ORDER BY f.is_folder DESC, f.name ASC
       `).all(`%${query}%`) as Record<string, unknown>[];
     } else {
       files = db.prepare(`
         SELECT f.*, u.display_name as uploader_name
         FROM files f LEFT JOIN users u ON f.uploaded_by = u.id
-        WHERE f.file_category = ?
+        WHERE f.file_category = ? AND f.deleted_at IS NULL
         ORDER BY f.is_folder DESC, f.name ASC
       `).all(category) as Record<string, unknown>[];
     }

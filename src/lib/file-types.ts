@@ -4,17 +4,19 @@
  */
 
 export type FileCategory =
-  | 'document'    // 文档类：PDF、Word、PPT、Excel、TXT 等
-  | 'image'       // 图片类：JPG、PNG、GIF、SVG、WebP 等
-  | 'audio'       // 音频类：MP3、WAV、FLAC、AAC 等
-  | 'video'       // 视频类：MP4、AVI、MKV、MOV 等
-  | 'code'        // 代码/开发类：JS、PY、HTML、CSS、JSON 等
-  | 'archive'     // 压缩包类：ZIP、RAR、7Z、TAR.GZ 等
-  | 'data'        // 数据类：CSV、SQL、DB、XML 等
-  | 'executable'  // 可执行类：EXE、DLL、SH、BAT 等
-  | 'design'      // 设计类：PSD、AI、SKETCH、FIGMA 等
-  | 'font'        // 字体类：TTF、OTF、WOFF 等
-  | 'other';      // 其他
+  | 'document'      // 文档类：PDF、Word、TXT 等
+  | 'spreadsheet'   // 表格类：Excel (XLSX、XLS) 等
+  | 'presentation'  // 演示类：PPT (PPTX、PPT) 等
+  | 'image'         // 图片类：JPG、PNG、GIF、SVG、WebP 等
+  | 'audio'         // 音频类：MP3、WAV、FLAC、AAC 等
+  | 'video'         // 视频类：MP4、AVI、MKV、MOV 等
+  | 'code'          // 代码/开发类：JS、PY、HTML、CSS、JSON 等
+  | 'archive'       // 压缩包类：ZIP、RAR、7Z、TAR.GZ 等
+  | 'data'          // 数据类：CSV、SQL、DB、XML 等
+  | 'executable'    // 可执行类：EXE、DLL、SH、BAT 等
+  | 'design'        // 设计类：PSD、AI、SKETCH、FIGMA 等
+  | 'font'          // 字体类：TTF、OTF、WOFF 等
+  | 'other';        // 其他
 
 /** 文件分类配置：名称、图标颜色、可预览标记 */
 export interface CategoryConfig {
@@ -29,6 +31,18 @@ export const CATEGORY_CONFIG: Record<FileCategory, CategoryConfig> = {
     label: '文档',
     color: 'text-blue-400',
     iconColor: '#60A5FA',
+    previewable: true,
+  },
+  spreadsheet: {
+    label: '表格',
+    color: 'text-green-400',
+    iconColor: '#22C55E',
+    previewable: true,
+  },
+  presentation: {
+    label: '演示',
+    color: 'text-orange-400',
+    iconColor: '#F97316',
     previewable: true,
   },
   image: {
@@ -98,13 +112,15 @@ const EXT_CATEGORY_MAP: Record<string, FileCategory> = {
   // === 文档类 ===
   pdf: 'document',
   doc: 'document', docx: 'document',
-  xls: 'document', xlsx: 'document',
-  ppt: 'document', pptx: 'document',
   txt: 'document', md: 'document', markdown: 'document',
   rtf: 'document', odt: 'document', ods: 'document', odp: 'document',
   wps: 'document', et: 'document', dps: 'document',
   epub: 'document', mobi: 'document', azw3: 'document',
   htm: 'document', html: 'document',
+  // === 表格类 ===
+  xls: 'spreadsheet', xlsx: 'spreadsheet',
+  // === 演示类 ===
+  ppt: 'presentation', pptx: 'presentation',
   // === 图片类 ===
   jpg: 'image', jpeg: 'image', png: 'image', gif: 'image',
   svg: 'image', webp: 'image', bmp: 'image', ico: 'image',
@@ -272,7 +288,7 @@ export function getCategoryByExt(ext: string): FileCategory {
 
 /** 可预览的分类列表 */
 export const PREVIEWABLE_CATEGORIES: FileCategory[] = [
-  'document', 'image', 'audio', 'video', 'code', 'data',
+  'document', 'spreadsheet', 'presentation', 'image', 'audio', 'video', 'code', 'data',
 ];
 
 /**
@@ -281,6 +297,8 @@ export const PREVIEWABLE_CATEGORIES: FileCategory[] = [
 export function getCategoryIcon(category: FileCategory): string {
   const iconMap: Record<FileCategory, string> = {
     document: 'file-text',
+    spreadsheet: 'table',
+    presentation: 'presentation',
     image: 'image',
     audio: 'music',
     video: 'film',

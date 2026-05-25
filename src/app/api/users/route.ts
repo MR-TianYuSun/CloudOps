@@ -19,13 +19,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = Number(searchParams.get('page')) || 1;
     const pageSize = Number(searchParams.get('page_size')) || 20;
+    const status = searchParams.get('status') || ''; // pending / active / disabled / rejected
     const offset = (page - 1) * pageSize;
 
-    const users = db.prepare(
-      'SELECT id, username, display_name, role, storage_quota, storage_used, status, created_at, last_login_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?'
-    ).all(pageSize, offset) as Record<string, unknown>[];
+    let users: Record<string, unknown>[];
+    let total: number;
 
-    const total = (db.prepare('SELECT COUNT(*) as count FROM users').get() as Record<string, unknown>).count;
+    if (status) {
+      users = db.prepare(
+        'SELECT id, username, display_name, email, role, storage_quota, storage_used, status, created_at, last_login_at FROM users WHERE status = ? ORDER BY id DESC LIMIT ? OFFSET ?'
+      ).all(status, pageSize, offset) as Record<string, unknown>[];
+      total = (db.prepare('SELECT COUNT(*) as count FROM users WHERE status = ?').get(status) as Record<string, unknown>).count as number;
+    } else {
+      users = db.prepare(
+        'SELECT id, username, display_name, email, role, storage_quota, storage_used, status, created_at, last_login_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?'
+      ).all(pageSize, offset) as Record<string, unknown>[];
+      total = (db.prepare('SELECT COUNT(*) as count FROM users').get() as Record<string, unknown>).count as number;
+    }
 
     return NextResponse.json({
       code: 200,
@@ -106,7 +116,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ code: 400, message: '不能删除自己', data: null }, { status: 400 });
     }
 
+    // 安全删除：先处理关联数据，再删除用户
     const db = getDb();
+
+    // 不能删除其他管理员（防止误操作）
+    const targetUser = db.prepare('SELECT role FROM users WHERE id = ?').get(Number(userId)) as Record<string, unknown> | undefined;
+    if (targetUser?.role === 'admin') {
+      return NextResponse.json({ code: 403, message: '不能删除管理员账户', data: null }, { status: 403 });
+    }
+
+    // 1. 将用户创建的文件的 uploaded_by 设为 NULL（保留文件）
+    db.prepare('UPDATE files SET uploaded_by = NULL WHERE uploaded_by = ?').run(Number(userId));
+    // 2. 将用户创建的分享的 created_by 设为 NULL（保留分享记录）
+    db.prepare('UPDATE shares SET created_by = NULL WHERE created_by = ?').run(Number(userId));
+    // 3. 删除用户的主题、API密钥、下载任务等个人数据
+    db.prepare('DELETE FROM user_themes WHERE user_id = ?').run(Number(userId));
+    db.prepare('DELETE FROM api_keys WHERE user_id = ?').run(Number(userId));
+    db.prepare('DELETE FROM download_tasks WHERE user_id = ?').run(Number(userId));
+    db.prepare('DELETE FROM recent_files WHERE user_id = ?').run(Number(userId));
+    db.prepare('DELETE FROM team_members WHERE user_id = ?').run(Number(userId));
+    // 4. 最后删除用户
     db.prepare('DELETE FROM users WHERE id = ?').run(Number(userId));
 
     return NextResponse.json({ code: 200, message: '删除成功', data: null });

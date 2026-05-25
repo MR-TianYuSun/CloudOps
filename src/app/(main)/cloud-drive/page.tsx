@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Upload, FolderPlus, Search, List, Grid3X3,
   Folder, File, Download, Share2, Trash2, Eye,
   ChevronRight, MoreHorizontal, ArrowLeft, Pencil, X,
-  RotateCcw, Copy, Move, CheckSquare, Link2, Lock,
+  RotateCcw, Copy, Move, CheckSquare, Link2, Lock, PenLine,
 } from 'lucide-react';
 import { FilePreview } from '@/components/file-preview';
 
@@ -22,6 +23,7 @@ interface FileItem {
   uploaderName: string;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string;
 }
 
 interface CategoryInfo {
@@ -45,6 +47,7 @@ const CATEGORY_MAP: Record<string, CategoryInfo> = {
 };
 
 const PREVIEWABLE = ['document', 'spreadsheet', 'presentation', 'text', 'image', 'data', 'code'];
+const EDITABLE_EXTENSIONS = ['docx', 'xlsx', 'xls', 'pptx', 'ppt'];
 
 function getCategoryInfo(category: string): CategoryInfo {
   return CATEGORY_MAP[category] || CATEGORY_MAP.other;
@@ -63,6 +66,7 @@ function getCategoryIcon(category: string) {
 }
 
 export default function CloudDrivePage() {
+  const router = useRouter();
   const [files, setFiles] = useState<FileItem[]>([]);
   const [currentParentId, setCurrentParentId] = useState(0);
   const [breadcrumbs, setBreadcrumbs] = useState<{ id: number; name: string }[]>([{ id: 0, name: '全部文件' }]);
@@ -85,6 +89,8 @@ export default function CloudDrivePage() {
   // === P0: 回收站 ===
   const [showTrash, setShowTrash] = useState(false);
   const [trashFiles, setTrashFiles] = useState<FileItem[]>([]);
+  const [trashBatchMode, setTrashBatchMode] = useState(false);
+  const [trashSelectedIds, setTrashSelectedIds] = useState<Set<number>>(new Set());
 
   // === P0: 批量操作 ===
   const [batchMode, setBatchMode] = useState(false);
@@ -102,7 +108,11 @@ export default function CloudDrivePage() {
   const [moveTargetId, setMoveTargetId] = useState(0);
   const [moveFolders, setMoveFolders] = useState<FileItem[]>([]);
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    setToken(localStorage.getItem('token'));
+  }, []);
 
   // 加载用户团队列表
   useEffect(() => {
@@ -259,7 +269,10 @@ export default function CloudDrivePage() {
     if (!token) return;
     const res = await fetch('/api/files/trash', { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
-    if (data.code === 200) setTrashFiles(data.data || []);
+    if (data.code === 200) {
+      setTrashFiles(data.data || []);
+      setTrashSelectedIds(new Set());
+    }
   };
 
   const handleRestore = async (id: number) => {
@@ -280,6 +293,68 @@ export default function CloudDrivePage() {
     });
     const data = await res.json();
     if (data.code === 200) fetchTrash();
+  };
+
+  // === 回收站批量操作 ===
+  const trashToggleSelect = (id: number) => {
+    setTrashSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const trashToggleSelectAll = () => {
+    if (trashSelectedIds.size === trashFiles.length) {
+      setTrashSelectedIds(new Set());
+    } else {
+      setTrashSelectedIds(new Set(trashFiles.map(f => f.id)));
+    }
+  };
+
+  const handleBatchRestore = async () => {
+    if (!token || trashSelectedIds.size === 0) return;
+    const res = await fetch('/api/files/trash', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'restore', ids: Array.from(trashSelectedIds) }),
+    });
+    const data = await res.json();
+    if (data.code === 200) {
+      setTrashSelectedIds(new Set());
+      setTrashBatchMode(false);
+      fetchTrash();
+      fetchFiles();
+    }
+  };
+
+  const handleBatchPermanentDelete = async () => {
+    if (!token || trashSelectedIds.size === 0 || !confirm(`确定要永久删除选中的 ${trashSelectedIds.size} 个文件吗？此操作不可恢复！`)) return;
+    const res = await fetch('/api/files/trash', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'permanent_delete', ids: Array.from(trashSelectedIds) }),
+    });
+    const data = await res.json();
+    if (data.code === 200) {
+      setTrashSelectedIds(new Set());
+      setTrashBatchMode(false);
+      fetchTrash();
+    }
+  };
+
+  const handleEmptyTrash = async () => {
+    if (!token || !confirm('确定要清空回收站吗？所有文件将被永久删除，不可恢复！')) return;
+    const res = await fetch('/api/files/trash', {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.code === 200) {
+      setTrashSelectedIds(new Set());
+      setTrashBatchMode(false);
+      fetchTrash();
+    }
   };
 
   // === 外链分享 ===
@@ -346,11 +421,108 @@ export default function CloudDrivePage() {
     if (dragCounterRef.current === 0) setIsDragging(false);
   };
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
-  const handleDrop = (e: React.DragEvent) => {
+
+  /** 递归读取拖入的文件/文件夹，返回 { file, folderPath } 数组 */
+  const readDragEntries = async (dataTransfer: DataTransfer): Promise<Array<{ file: File; folderPath: string }>> => {
+    const items = dataTransfer.items;
+    const results: Array<{ file: File; folderPath: string }> = [];
+
+    const readEntry = (entry: FileSystemEntry, currentPath: string): Promise<void> => {
+      return new Promise((resolve) => {
+        if (entry.isFile) {
+          (entry as FileSystemFileEntry).file((file) => {
+            results.push({ file, folderPath: currentPath });
+            resolve();
+          }, () => resolve());
+        } else if (entry.isDirectory) {
+          const dirReader = (entry as FileSystemDirectoryEntry).createReader();
+          const readAllEntries = (): Promise<void> => {
+            return new Promise((resolveDir) => {
+              dirReader.readEntries(async (entries) => {
+                if (entries.length === 0) {
+                  resolveDir();
+                  return;
+                }
+                const newPath = currentPath ? `${currentPath}/${entry.name}` : entry.name;
+                for (const e of entries) {
+                  await readEntry(e, newPath);
+                }
+                // readEntries may not return all items in one call, continue reading
+                await readAllEntries();
+                resolveDir();
+              }, () => resolveDir());
+            });
+          };
+          readAllEntries().then(resolve);
+        } else {
+          resolve();
+        }
+      });
+    };
+
+    if (items && items.length > 0) {
+      const promises: Promise<void>[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry?.();
+        if (entry) {
+          promises.push(readEntry(entry, ''));
+        }
+      }
+      await Promise.all(promises);
+    }
+
+    // Fallback: 如果 webkitGetAsEntry 不可用，用普通文件列表
+    if (results.length === 0 && dataTransfer.files.length > 0) {
+      for (let i = 0; i < dataTransfer.files.length; i++) {
+        results.push({ file: dataTransfer.files[i], folderPath: '' });
+      }
+    }
+
+    return results;
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     dragCounterRef.current = 0;
     setIsDragging(false);
-    handleUpload(e.dataTransfer.files);
+    if (!token) return;
+
+    const filesWithPaths = await readDragEntries(e.dataTransfer);
+    if (filesWithPaths.length === 0) return;
+
+    setUploading(true);
+    setUploadProgress(0);
+    const total = filesWithPaths.length;
+
+    for (let i = 0; i < total; i++) {
+      const { file, folderPath } = filesWithPaths[i];
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('parent_id', String(currentParentId));
+      if (folderPath) {
+        formData.append('folder_path', folderPath);
+      }
+
+      await new Promise<void>((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/files/upload');
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const fileProgress = event.loaded / event.total;
+            const overallProgress = ((i + fileProgress) / total) * 100;
+            setUploadProgress(Math.round(overallProgress));
+          }
+        };
+        xhr.onload = () => resolve();
+        xhr.onerror = () => resolve();
+        xhr.send(formData);
+      });
+    }
+
+    setUploading(false);
+    setUploadProgress(0);
+    fetchFiles();
   };
 
   // === 导航 ===
@@ -431,7 +603,7 @@ export default function CloudDrivePage() {
               团队空间
             </button>
             <button
-              onClick={() => { setShowTrash(true); fetchTrash(); }}
+              onClick={() => { setShowTrash(true); setTrashBatchMode(false); setTrashSelectedIds(new Set()); fetchTrash(); }}
               className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               回收站
@@ -477,8 +649,46 @@ export default function CloudDrivePage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-muted-foreground">回收站中的文件将在 30 天后自动清除</h2>
-            <button onClick={() => setShowTrash(false)} className="text-sm text-primary hover:underline">返回文件列表</button>
+            <button onClick={() => { setShowTrash(false); setTrashBatchMode(false); setTrashSelectedIds(new Set()); }} className="text-sm text-primary hover:underline">返回文件列表</button>
           </div>
+
+          {/* 回收站工具栏 */}
+          {trashFiles.length > 0 && (
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {trashBatchMode ? (
+                  <>
+                    <button onClick={trashToggleSelectAll} className="flex items-center gap-1.5 px-3 py-2 bg-surface-container hover:bg-surface-container/80 rounded-lg text-sm transition-colors">
+                      <CheckSquare className="w-4 h-4" /> {trashSelectedIds.size === trashFiles.length ? '取消全选' : '全选'}
+                    </button>
+                    {trashSelectedIds.size > 0 && (
+                      <>
+                        <button onClick={handleBatchRestore} className="flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm transition-colors">
+                          <RotateCcw className="w-4 h-4" /> 恢复({trashSelectedIds.size})
+                        </button>
+                        <button onClick={handleBatchPermanentDelete} className="flex items-center gap-1.5 px-3 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg text-sm transition-colors">
+                          <Trash2 className="w-4 h-4" /> 永久删除({trashSelectedIds.size})
+                        </button>
+                      </>
+                    )}
+                    <button onClick={() => { setTrashBatchMode(false); setTrashSelectedIds(new Set()); }} className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      取消
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => setTrashBatchMode(true)} className="flex items-center gap-1.5 px-3 py-2 bg-surface-container hover:bg-surface-container/80 rounded-lg text-sm transition-colors">
+                      <CheckSquare className="w-4 h-4" /> 批量操作
+                    </button>
+                    <button onClick={handleEmptyTrash} className="flex items-center gap-1.5 px-3 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg text-sm transition-colors">
+                      <Trash2 className="w-4 h-4" /> 清空回收站
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {trashFiles.length === 0 ? (
             <div className="bg-surface/60 backdrop-blur-xl border border-border/30 rounded-xl p-12 text-center">
               <Trash2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
@@ -486,20 +696,24 @@ export default function CloudDrivePage() {
             </div>
           ) : (
             <div className="bg-surface/60 backdrop-blur-xl border border-border/30 rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[1fr_100px_120px_120px] gap-4 px-4 py-2.5 text-xs text-muted-foreground/60 border-b border-border/20">
+              <div className={`grid gap-4 px-4 py-2.5 text-xs text-muted-foreground/60 border-b border-border/20 ${trashBatchMode ? 'grid-cols-[32px_1fr_100px_120px_120px]' : 'grid-cols-[1fr_100px_120px_120px]'}`}>
+                {trashBatchMode && <span><input type="checkbox" checked={trashSelectedIds.size === trashFiles.length && trashFiles.length > 0} onChange={trashToggleSelectAll} className="accent-primary" /></span>}
                 <span>名称</span>
                 <span>大小</span>
                 <span>删除时间</span>
                 <span>操作</span>
               </div>
               {trashFiles.map((file) => (
-                <div key={file.id} className="grid grid-cols-[1fr_100px_120px_120px] gap-4 px-4 py-3 items-center hover:bg-surface-container/30 transition-colors">
+                <div key={file.id} className={`grid gap-4 px-4 py-3 items-center hover:bg-surface-container/30 transition-colors ${trashBatchMode ? 'grid-cols-[32px_1fr_100px_120px_120px]' : 'grid-cols-[1fr_100px_120px_120px]'} ${trashSelectedIds.has(file.id) ? 'bg-primary/5' : ''}`}>
+                  {trashBatchMode && (
+                    <span><input type="checkbox" checked={trashSelectedIds.has(file.id)} onChange={() => trashToggleSelect(file.id)} className="accent-primary" /></span>
+                  )}
                   <div className="flex items-center gap-3 min-w-0">
                     {file.isFolder ? <Folder className="w-5 h-5 text-yellow-400 shrink-0" /> : getCategoryIcon(file.fileCategory)}
                     <span className="truncate text-sm">{file.name}</span>
                   </div>
                   <span className="text-sm text-muted-foreground">{file.isFolder ? '-' : file.sizeText}</span>
-                  <span className="text-sm text-muted-foreground">{new Date(file.updatedAt).toLocaleDateString('zh-CN')}</span>
+                  <span className="text-sm text-muted-foreground">{new Date(file.deletedAt || file.updatedAt).toLocaleDateString('zh-CN')}</span>
                   <div className="flex items-center gap-1">
                     <button onClick={() => handleRestore(file.id)} className="p-1 rounded hover:bg-surface-container transition-colors text-primary" title="恢复">
                       <RotateCcw className="w-4 h-4" />
@@ -610,7 +824,8 @@ export default function CloudDrivePage() {
           {isDragging && (
             <div className="border-2 border-dashed border-primary/50 rounded-xl p-12 text-center bg-primary/5">
               <Upload className="w-10 h-10 text-primary mx-auto mb-3" />
-              <p className="text-lg font-medium">松开鼠标上传文件</p>
+              <p className="text-lg font-medium">松开鼠标上传文件或文件夹</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">支持拖入整个文件夹，自动保持原有目录结构</p>
             </div>
           )}
 
@@ -619,7 +834,7 @@ export default function CloudDrivePage() {
             <div className="bg-surface/60 backdrop-blur-xl border border-border/30 rounded-xl p-12 text-center">
               <Folder className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
               <p className="text-muted-foreground">暂无文件，上传或创建文件夹开始使用</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">支持拖拽文件到此处上传</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">支持拖拽文件或文件夹到此处上传，文件夹自动保持目录结构</p>
             </div>
           )}
 
@@ -767,6 +982,11 @@ export default function CloudDrivePage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
+                {EDITABLE_EXTENSIONS.includes((previewFile.fileExt || previewFile.name?.split('.').pop() || '').toLowerCase()) && (
+                  <button onClick={() => router.push(`/documents/${previewFile.id}`)} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm transition-colors">
+                    <PenLine className="w-3.5 h-3.5" /> 在线编辑
+                  </button>
+                )}
                 <button onClick={() => handleDownload(previewFile)} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container hover:bg-surface-container/80 rounded-lg text-sm transition-colors">
                   <Download className="w-3.5 h-3.5" /> 下载
                 </button>

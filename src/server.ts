@@ -31,6 +31,8 @@ app.prepare().then(() => {
   const wssTerminal = new WebSocketServer({ noServer: true });
   // WebSocket server for VNC remote desktop
   const wssVnc = new WebSocketServer({ noServer: true });
+  // WebSocket server for document collaboration
+  const wssCollab = new WebSocketServer({ noServer: true });
 
   // ============ SSH Terminal Handler ============
   wssTerminal.on('connection', (ws, req) => {
@@ -266,6 +268,177 @@ app.prepare().then(() => {
     });
   });
 
+  // ============ Document Collaboration Handler ============
+  const collabRooms = new Map<string, Set<import('ws').WebSocket>>();
+  const collabDocs = new Map<string, { version: number; snapshots: unknown[] }>();
+
+  // Expose collaboration room info via globalThis so API routes can access it
+  const collabRoomMembers = new Map<string, Array<{ userId: number; username: string; displayName: string; joinedAt: number }>>();
+  (globalThis as Record<string, unknown>).__collabRoomMembers = collabRoomMembers;
+
+  function getCollabKey(docId: string): string {
+    return `doc:${docId}`;
+  }
+
+  function broadcastToRoom(docId: string, message: Record<string, unknown>, excludeWs?: import('ws').WebSocket) {
+    const key = getCollabKey(docId);
+    const room = collabRooms.get(key);
+    if (!room) return;
+    const data = JSON.stringify(message);
+    for (const client of room) {
+      if (client !== excludeWs && client.readyState === 1) {
+        client.send(data);
+      }
+    }
+  }
+
+  wssCollab.on('connection', (ws, req) => {
+    const url = new URL(req.url!, `http://${req.headers.host}`);
+    const token = url.searchParams.get('token');
+    const docId = url.searchParams.get('docId');
+
+    if (!token || !docId) {
+      ws.send(JSON.stringify({ type: 'error', payload: 'Missing token or docId' }));
+      ws.close();
+      return;
+    }
+
+    const payload = verifyToken(token);
+    if (!payload) {
+      ws.send(JSON.stringify({ type: 'error', payload: 'Authentication failed' }));
+      ws.close();
+      return;
+    }
+
+    const userId = (payload as unknown as Record<string, unknown>).userId as number;
+    const username = (payload as unknown as Record<string, unknown>).username as string;
+    const key = getCollabKey(docId);
+
+    // Join room
+    if (!collabRooms.has(key)) {
+      collabRooms.set(key, new Set());
+    }
+    collabRooms.get(key)!.add(ws);
+
+    // Initialize document version if needed
+    if (!collabDocs.has(key)) {
+      collabDocs.set(key, { version: 0, snapshots: [] });
+    }
+
+    // Send join notification
+    ws.send(JSON.stringify({
+      type: 'collab:joined',
+      payload: {
+        docId,
+        userId,
+        username,
+        version: collabDocs.get(key)!.version,
+        members: Array.from(collabRooms.get(key)!).map((c) => (c as unknown as Record<string, unknown>).__collabUser).filter(Boolean),
+      }
+    }));
+
+    // Notify others
+    broadcastToRoom(docId, {
+      type: 'collab:peer:join',
+      payload: { userId, username },
+    }, ws);
+
+    // Tag connection with user info
+    (ws as unknown as Record<string, unknown>).__collabUser = { userId, username };
+
+    // Update room members map for API access
+    const memberInfo = { userId, username, displayName: username, joinedAt: Date.now() };
+    if (!collabRoomMembers.has(docId)) {
+      collabRoomMembers.set(docId, []);
+    }
+    collabRoomMembers.get(docId)!.push(memberInfo);
+    // Also store memberInfo on the ws for removal later
+    (ws as unknown as Record<string, unknown>).__collabMemberInfo = { docId, memberInfo };
+
+    ws.on('message', (raw: unknown) => {
+      try {
+        const msg = JSON.parse(String(raw));
+        if (msg.type === 'ping') {
+          ws.send(JSON.stringify({ type: 'pong', payload: null }));
+          return;
+        }
+
+        const docState = collabDocs.get(key);
+        if (!docState) return;
+
+        switch (msg.type) {
+          case 'collab:op': {
+            // OT operation: broadcast to all peers
+            docState.version++;
+            broadcastToRoom(docId, {
+              type: 'collab:op',
+              payload: {
+                ...msg.payload,
+                version: docState.version,
+                userId,
+                username,
+              },
+            }, ws);
+            break;
+          }
+          case 'collab:cursor': {
+            // Cursor position broadcast
+            broadcastToRoom(docId, {
+              type: 'collab:cursor',
+              payload: { ...msg.payload, userId, username },
+            }, ws);
+            break;
+          }
+          case 'collab:selection': {
+            // Selection range broadcast
+            broadcastToRoom(docId, {
+              type: 'collab:selection',
+              payload: { ...msg.payload, userId, username },
+            }, ws);
+            break;
+          }
+          case 'collab:save': {
+            // Acknowledge save
+            broadcastToRoom(docId, {
+              type: 'collab:save:ack',
+              payload: { userId, username, version: docState.version },
+            });
+            break;
+          }
+        }
+      } catch {
+        // ignore parse errors
+      }
+    });
+
+    ws.on('close', () => {
+      const room = collabRooms.get(key);
+      if (room) {
+        room.delete(ws);
+        if (room.size === 0) {
+          collabRooms.delete(key);
+          collabDocs.delete(key);
+          collabRoomMembers.delete(docId);
+        } else {
+          broadcastToRoom(docId, {
+            type: 'collab:peer:leave',
+            payload: { userId, username },
+          });
+        }
+      }
+      // Remove from room members map
+      const memberInfo = (ws as unknown as Record<string, unknown>).__collabMemberInfo as { docId: string; memberInfo: { userId: number } } | undefined;
+      if (memberInfo) {
+        const members = collabRoomMembers.get(memberInfo.docId);
+        if (members) {
+          const idx = members.findIndex(m => m.userId === memberInfo.memberInfo.userId);
+          if (idx !== -1) members.splice(idx, 1);
+          if (members.length === 0) collabRoomMembers.delete(memberInfo.docId);
+        }
+      }
+    });
+  });
+
   // Handle HTTP upgrade for WebSocket
   server.on('upgrade', (req, socket, head) => {
     const { pathname } = parse(req.url!, true);
@@ -277,6 +450,10 @@ app.prepare().then(() => {
     } else if (pathname === '/ws/vnc') {
       wssVnc.handleUpgrade(req, socket, head, (ws) => {
         wssVnc.emit('connection', ws, req);
+      });
+    } else if (pathname === '/ws/collab') {
+      wssCollab.handleUpgrade(req, socket, head, (ws) => {
+        wssCollab.emit('connection', ws, req);
       });
     } else {
       socket.destroy();

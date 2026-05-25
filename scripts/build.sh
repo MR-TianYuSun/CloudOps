@@ -9,7 +9,7 @@ echo "Installing dependencies..."
 pnpm install --prefer-frozen-lockfile --prefer-offline --loglevel debug --reporter=append-only
 
 echo "Bundling noVNC for browser..."
-npx esbuild node_modules/@novnc/novnc/core/rfb.js --bundle --format=esm --outfile=public/novnc-rfb.js || true
+pnpm esbuild node_modules/@novnc/novnc/core/rfb.js --bundle --format=esm --outfile=public/novnc-rfb.js || true
 
 echo "Building the Next.js project..."
 pnpm next build

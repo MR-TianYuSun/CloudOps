@@ -13,6 +13,8 @@ const ImageViewer = dynamic(() => import('./ImageViewer'), { ssr: false });
 const MarkdownViewer = dynamic(() => import('./MarkdownViewer'), { ssr: false });
 const HtmlViewer = dynamic(() => import('./HtmlViewer'), { ssr: false });
 const CssViewer = dynamic(() => import('./CssViewer'), { ssr: false });
+const VideoViewer = dynamic(() => import('./VideoViewer'), { ssr: false });
+const AudioViewer = dynamic(() => import('./AudioViewer'), { ssr: false });
 
 interface FilePreviewProps {
   fileId: number;
@@ -96,6 +98,8 @@ export default function FilePreview({ fileId, fileName, fileExt, ownerType = 'pe
         {previewType === 'markdown' && <MarkdownViewer url={previewUrl} />}
         {previewType === 'html' && <HtmlViewer url={previewUrl} />}
         {previewType === 'css' && <CssViewer url={previewUrl} />}
+        {previewType === 'video' && <VideoViewer url={previewUrl} fileName={fileName} />}
+        {previewType === 'audio' && <AudioViewer url={previewUrl} fileName={fileName} />}
         {previewType === 'text' && <TextViewer url={previewUrl} fileName={fileName} />}
         {previewType === 'none' && (
           <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-muted/20 h-full">

@@ -28,11 +28,16 @@ export default function UsersPage() {
   const [addForm, setAddForm] = useState({ username: '', displayName: '', password: '', role: 'user' });
   const [currentRole, setCurrentRole] = useState<string>('user');
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    setToken(localStorage.getItem('token'));
+  }, []);
 
   const fetchUsers = async () => {
-    if (!token) return;
-    const res = await fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } });
+    const t = localStorage.getItem('token');
+    if (!t) return;
+    const res = await fetch('/api/users', { headers: { Authorization: `Bearer ${t}` } });
     const data = await res.json();
     if (data.code === 200) {
       const rawUsers = data.data?.users || data.data || [];
@@ -51,14 +56,15 @@ export default function UsersPage() {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { if (token) fetchUsers(); }, [token]);
 
   useEffect(() => {
-    if (!token) return;
-    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
+    const t = localStorage.getItem('token');
+    if (!t) return;
+    fetch('/api/auth/me', { headers: { Authorization: `Bearer ${t}` } })
       .then((r) => r.json())
       .then((d) => { if (d.code === 200) setCurrentRole(d.data.role); });
-  }, []);
+  }, [token]);
 
   const handleAddUser = async () => {
     if (!addForm.username || !addForm.password) return;

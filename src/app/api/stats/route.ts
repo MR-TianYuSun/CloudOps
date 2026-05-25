@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
         COUNT(*) as total,
         COALESCE(SUM(size), 0) as total_size
       FROM files
-      WHERE is_folder = 0
+      WHERE is_folder = 0 AND deleted_at IS NULL
     `).get() as Record<string, unknown>;
 
     // 用户统计

@@ -83,17 +83,23 @@ function permanentDelete(
   file: Record<string, unknown>
 ) {
   const fs = require('fs');
+
+  // 收集要删除的文件总大小和所有者，用于更新 storage_used
+  let totalSize = 0;
+  let ownerId: number | null = Number(file.uploaded_by) || null;
+
   // 如果是文件，删除磁盘文件
   if (!file.is_folder && file.storage_path) {
     const storagePath = file.storage_path as string;
     if (fs.existsSync(storagePath)) {
       fs.unlinkSync(storagePath);
     }
+    totalSize += Number(file.size) || 0;
   }
 
   // 如果是文件夹，递归永久删除子文件
   if (file.is_folder) {
-    permanentDeleteRecursive(db, fileId);
+    totalSize += permanentDeleteRecursive(db, fileId);
   }
 
   // 删除关联的分享链接
@@ -102,22 +108,30 @@ function permanentDelete(
   // 删除数据库记录
   db.prepare('DELETE FROM files WHERE id = ?').run(fileId);
 
+  // 更新用户存储使用量
+  if (ownerId && totalSize > 0) {
+    db.prepare('UPDATE users SET storage_used = MAX(0, storage_used - ?) WHERE id = ?').run(totalSize, ownerId);
+  }
+
   return NextResponse.json({ code: 200, message: '已永久删除', data: null });
 }
 
-function permanentDeleteRecursive(db: ReturnType<typeof getDb>, folderId: number) {
+function permanentDeleteRecursive(db: ReturnType<typeof getDb>, folderId: number): number {
   const fs = require('fs');
+  let totalSize = 0;
   const children = db.prepare('SELECT * FROM files WHERE parent_id = ?').all(folderId) as Record<string, unknown>[];
   for (const child of children) {
     if (child.is_folder) {
-      permanentDeleteRecursive(db, child.id as number);
+      totalSize += permanentDeleteRecursive(db, child.id as number);
     } else if (child.storage_path) {
       const sp = child.storage_path as string;
       if (fs.existsSync(sp)) {
         fs.unlinkSync(sp);
       }
+      totalSize += Number(child.size) || 0;
     }
     db.prepare('DELETE FROM shares WHERE file_id = ?').run(child.id as number);
     db.prepare('DELETE FROM files WHERE id = ?').run(child.id);
   }
+  return totalSize;
 }

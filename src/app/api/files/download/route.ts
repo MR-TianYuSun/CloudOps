@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     }
 
     const db = getDb();
-    const file = db.prepare('SELECT * FROM files WHERE id = ? AND is_folder = 0').get(fileId) as Record<string, unknown> | undefined;
+    const file = db.prepare('SELECT * FROM files WHERE id = ? AND is_folder = 0 AND deleted_at IS NULL').get(fileId) as Record<string, unknown> | undefined;
 
     if (!file || !file.storage_path) {
       return NextResponse.json({ code: 404, message: '文件不存在', data: null }, { status: 404 });
