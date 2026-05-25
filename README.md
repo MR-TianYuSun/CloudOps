@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="public/logo.png" alt="CloudOps Logo" width="80" height="80" />
-
 # CloudOps
 
 ### 个人 & 小团队云盘 · 服务器管控一体化平台
@@ -14,6 +12,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-WAL%20Mode-003B57?logo=sqlite)](https://www.sqlite.org/)
 [![License](https://img.shields.io/badge/License-MIT-22C55E.svg)](LICENSE)
 [![pnpm](https://img.shields.io/badge/pnpm-9.0+-F69220?logo=pnpm)](https://pnpm.io/)
+[![在线演示](https://img.shields.io/badge/在线演示-点击访问-blue?logo=globe)](http://47.101.147.0:4000)
 
 </div>
 
