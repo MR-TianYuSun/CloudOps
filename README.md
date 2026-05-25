@@ -421,6 +421,3 @@ A：安装 [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual
 
 ---
 
-## License
-
-[MIT License](LICENSE) © 2026 孙天愉
