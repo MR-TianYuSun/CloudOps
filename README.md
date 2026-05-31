@@ -490,7 +490,3 @@ pnpm build
 技术架构详情参见 [TECHNICAL.md](TECHNICAL.md)。
 
 ---
-
-## License
-
-[MIT License](LICENSE) © 2026 孙天愉
