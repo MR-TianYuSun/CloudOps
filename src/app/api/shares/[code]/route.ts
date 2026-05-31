@@ -41,6 +41,41 @@ export async function GET(
       return NextResponse.json({ code: 410, message: '下载次数已达上限', data: null }, { status: 410 });
     }
 
+    // 如果是文件夹，获取文件夹内容
+    let folderContents: Array<{
+      id: number;
+      name: string;
+      size: number;
+      sizeText: string;
+      isFolder: boolean;
+      fileExt: string | null;
+      fileCategory: string;
+    }> = [];
+
+    if (share.is_folder) {
+      const folderId = share.file_id as number;
+      const children = db.prepare(`
+        SELECT id, name, size, is_folder, file_ext, file_category
+        FROM files
+        WHERE parent_id = ? AND deleted_at IS NULL
+        ORDER BY is_folder DESC, name ASC
+      `).all(folderId) as Array<Record<string, unknown>>;
+
+      folderContents = children.map(c => ({
+        id: c.id as number,
+        name: c.name as string,
+        size: c.size as number,
+        sizeText: formatFileSize(c.size as number),
+        isFolder: !!c.is_folder,
+        fileExt: c.file_ext as string | null,
+        fileCategory: c.file_category as string,
+      }));
+
+      // 计算文件夹总大小
+      const totalSize = calculateFolderSize(db, folderId);
+      share.file_size = totalSize;
+    }
+
     return NextResponse.json({
       code: 200,
       message: 'success',
@@ -55,9 +90,27 @@ export async function GET(
         hasPassword: !!share.password,
         expiresAt: share.expires_at,
         createdAt: share.created_at,
+        folderContents,
       },
     });
   } catch {
     return NextResponse.json({ code: 500, message: '获取分享信息失败', data: null }, { status: 500 });
   }
+}
+
+/** 递归计算文件夹总大小 */
+function calculateFolderSize(db: ReturnType<typeof getDb>, folderId: number): number {
+  let totalSize = 0;
+  const children = db.prepare(
+    'SELECT id, is_folder, size FROM files WHERE parent_id = ? AND deleted_at IS NULL'
+  ).all(folderId) as Array<Record<string, unknown>>;
+
+  for (const child of children) {
+    if (child.is_folder) {
+      totalSize += calculateFolderSize(db, child.id as number);
+    } else {
+      totalSize += (child.size as number) || 0;
+    }
+  }
+  return totalSize;
 }

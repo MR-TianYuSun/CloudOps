@@ -11,7 +11,7 @@
 ## 目录结构
 
 ```
-├── public/                 # 静态资源
+├── public/                 # 静态资源 (含桌面背景图 bg-1~4)
 ├── scripts/                # 构建与启动脚本
 │   ├── build.sh            # 构建脚本
 │   ├── dev.sh              # 开发环境启动脚本
@@ -19,12 +19,27 @@
 │   └── start.sh            # 生产环境启动脚本
 ├── src/
 │   ├── app/                # 页面路由与布局
-│   ├── components/ui/      # Shadcn UI 组件库
+│   │   ├── (main)/         # 主布局页面 (云盘、设置等)
+│   │   ├── s/[code]/       # 分享页面 (文件+文件夹分享)
+│   │   └── api/            # API 路由
+│   │       ├── auth/       # 认证 (登录/注册/验证)
+│   │       ├── files/      # 文件操作 (上传/下载/删除/搜索/回收站)
+│   │       ├── shares/     # 分享管理 (含文件夹ZIP下载)
+│   │       ├── skills/     # Skill 平台 (CRUD/执行/历史/导入导出)
+│   │       ├── system-settings/ # 系统设置
+│   │       └── users/      # 用户管理
+│   ├── components/
+│   │   ├── desktop/        # 桌面系统组件
+│   │   │   └── apps/       # 桌面应用 (SkillPlatform 等)
+│   │   └── ui/             # Shadcn UI 组件库
 │   ├── hooks/              # 自定义 Hooks
-│   ├── lib/                # 工具库
+│   ├── lib/
+│   │   ├── auth.ts         # JWT 认证工具
+│   │   ├── coze-llm.ts     # LLM 调用封装 (eval('require')绕过Turbopack)
+│   │   ├── db.ts           # SQLite 数据库 + schema + 迁移
 │   │   └── utils.ts        # 通用工具函数 (cn)
 │   └── server.ts           # 自定义服务端入口
-├── next.config.ts          # Next.js 配置
+├── next.config.ts          # Next.js 配置 (含 serverExternalPackages)
 ├── package.json            # 项目依赖管理
 └── tsconfig.json           # TypeScript 配置
 ```
@@ -63,3 +78,43 @@
 
 - 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
 - Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+
+## 核心功能模块
+
+### 文件管理
+- 上传/下载/搜索/回收站/批量操作
+- 文件夹创建、移动、递归删除
+- 存储配额检查 (上传时校验 max_upload_size + storage_used)
+- 永久删除时自动扣减 storage_used
+
+### 分享系统
+- 文件分享：生成分享链接+提取码
+- 文件夹分享：显示子文件列表 + ZIP 打包下载 (archiver v7)
+- API: POST /api/shares/[code]/download 支持递归打包
+
+### Skill 平台
+- 三种类型：prompt (LLM调用)、script (JS沙箱执行)、automation (步骤工作流)
+- 执行引擎：prompt 使用 coze-coding-dev-sdk (通过 eval('require') 绕过 Turbopack CJS 限制)
+- script 类型：生成临时 JS 文件通过 child_process.execSync 执行
+- 模板变量替换：支持 {{input}} 和任意 {{varName}} 从 extraParams 取值
+- 执行历史：skill_runs 表记录每次执行
+- 公共 Skill 发现：scope=public 查询公共 Skill
+- 文件类型关联：fileCategory 参数推荐关联 Skill
+- 导入/导出：action=import/export JSON 配置
+- 云盘"标记为 Skill"：弹出配置弹窗创建 Skill
+
+### 桌面系统
+- 桌面背景轮播：4张背景图，5秒间隔切换，淡入淡出过渡
+- 桌面应用：SkillPlatform、文件管理器等
+- AppRegistry/AppRenderer 管理桌面应用注册和渲染
+
+### 系统设置
+- allow_registration / require_approval / max_upload_size / default_quota / system_name / upload_dir
+- 所有设置项已验证生效
+
+## 注意事项
+
+- **coze-coding-dev-sdk**: CJS 模块，在 Turbopack 环境下必须通过 `eval('require')` 加载，不能直接 import
+- **archiver**: 使用 v7，v8 API 不兼容
+- **DB 迁移**: ALTER TABLE 语句用于增量添加列，已存在时会跳过
+- **JWT**: 统一使用 lib/auth.ts 的 generateToken/verifyToken，禁止单独创建密钥

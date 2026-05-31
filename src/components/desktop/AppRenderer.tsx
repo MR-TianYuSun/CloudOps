@@ -9,8 +9,7 @@ const ServerManagerApp = dynamic(() => import('./apps/ServerManagerApp'), { ssr:
 const DashboardApp = dynamic(() => import('./apps/DashboardApp'), { ssr: false });
 const StorageAnalyticsApp = dynamic(() => import('./apps/StorageAnalyticsApp'), { ssr: false });
 const RecentFilesApp = dynamic(() => import('./apps/RecentFilesApp'), { ssr: false });
-const CollabEditorApp = dynamic(() => import('./apps/CollabEditorApp'), { ssr: false });
-const DownloadManagerApp = dynamic(() => import('./apps/DownloadManagerApp'), { ssr: false });
+
 const ThemeSettingsApp = dynamic(() => import('./apps/ThemeSettingsApp'), { ssr: false });
 const FileEncryptApp = dynamic(() => import('./apps/FileEncryptApp'), { ssr: false });
 const ApiDocsApp = dynamic(() => import('./apps/ApiDocsApp'), { ssr: false });
@@ -19,14 +18,14 @@ const SettingsApp = dynamic(() => import('./apps/SettingsApp'), { ssr: false });
 const UserManagementApp = dynamic(() => import('./apps/UserManagementApp'), { ssr: false });
 const TerminalApp = dynamic(() => import('./apps/TerminalApp'), { ssr: false });
 
+
 const APP_COMPONENT_MAP: Record<string, ComponentType<{ windowId: string }>> = {
   'cloud-drive': CloudDriveApp,
   'server-manager': ServerManagerApp,
   'dashboard': DashboardApp,
   'storage-analytics': StorageAnalyticsApp,
   'recent-files': RecentFilesApp,
-  'collab-editor': CollabEditorApp,
-  'download-manager': DownloadManagerApp,
+
   'theme-settings': ThemeSettingsApp,
   'file-encrypt': FileEncryptApp,
   'api-docs': ApiDocsApp,
@@ -34,6 +33,7 @@ const APP_COMPONENT_MAP: Record<string, ComponentType<{ windowId: string }>> = {
   'settings': SettingsApp,
   'user-management': UserManagementApp,
   'terminal': TerminalApp,
+
 };
 
 interface AppRendererProps {

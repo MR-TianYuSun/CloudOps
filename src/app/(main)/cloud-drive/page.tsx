@@ -951,10 +951,8 @@ export default function CloudDrivePage() {
             <button onClick={() => { handleDownload(contextFile); setContextMenu(null); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-container transition-colors"><Download className="w-4 h-4" /> 下载</button>
           )}
-          {!contextFile.isFolder && (
-            <button onClick={() => { setShareModal({ fileId: contextFile.id, fileName: contextFile.name }); setShareResult(null); setSharePassword(''); setShareExpiry('7'); setContextMenu(null); }}
+          <button onClick={() => { setShareModal({ fileId: contextFile.id, fileName: contextFile.name }); setShareResult(null); setSharePassword(''); setShareExpiry('7'); setContextMenu(null); }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-container transition-colors"><Share2 className="w-4 h-4" /> 分享</button>
-          )}
           <button onClick={() => { setMoveModal({ fileIds: [contextFile.id], mode: 'move' }); fetchMoveFolders(); setContextMenu(null); }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-surface-container transition-colors"><Move className="w-4 h-4" /> 移动到</button>
           <button onClick={() => { setMoveModal({ fileIds: [contextFile.id], mode: 'copy' }); fetchMoveFolders(); setContextMenu(null); }}

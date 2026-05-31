@@ -57,25 +57,7 @@ export const APP_REGISTRY: AppDefinition[] = [
     minHeight: 350,
     singleton: true,
   },
-  {
-    id: 'collab-editor',
-    title: '在线文档编辑',
-    icon: 'file-edit',
-    defaultWidth: 900,
-    defaultHeight: 650,
-    minWidth: 600,
-    minHeight: 400,
-  },
-  {
-    id: 'download-manager',
-    title: '离线下载',
-    icon: 'download',
-    defaultWidth: 750,
-    defaultHeight: 500,
-    minWidth: 500,
-    minHeight: 350,
-    singleton: true,
-  },
+
   // P3 应用
   {
     id: 'theme-settings',
@@ -117,6 +99,7 @@ export const APP_REGISTRY: AppDefinition[] = [
     minHeight: 350,
     singleton: true,
   },
+
   // 系统应用
   {
     id: 'settings',

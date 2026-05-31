@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
 import crypto from 'crypto';
 
 /** POST /api/shares - 创建分享链接 */
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     const actualFileId = fileId || file_id;
     if (!actualFileId) {
-      return NextResponse.json({ code: 400, message: '请选择文件', data: null }, { status: 400 });
+      return NextResponse.json({ code: 400, message: '请选择文件或文件夹', data: null }, { status: 400 });
     }
 
     // 前端传天数(expiry_days)，后端统一转为小时
@@ -38,11 +37,6 @@ export async function POST(request: NextRequest) {
     const file = db.prepare('SELECT * FROM files WHERE id = ? AND deleted_at IS NULL').get(actualFileId) as Record<string, unknown> | undefined;
     if (!file) {
       return NextResponse.json({ code: 404, message: '文件不存在或已被删除', data: null }, { status: 404 });
-    }
-
-    // 文件夹暂不支持分享下载
-    if (file.is_folder) {
-      return NextResponse.json({ code: 400, message: '暂不支持分享文件夹，请选择文件进行分享', data: null }, { status: 400 });
     }
 
     if (payload.role !== 'admin' && file.uploaded_by !== payload.userId) {
@@ -65,7 +59,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       code: 200,
       message: '分享链接已创建',
-      data: { shareCode, shareUrl, password: password || null, expiresAt, maxDownloads: maxDownloads || 0 },
+      data: {
+        shareCode,
+        shareUrl,
+        password: password || null,
+        expiresAt,
+        maxDownloads: maxDownloads || 0,
+        isFolder: !!file.is_folder,
+      },
     });
   } catch {
     return NextResponse.json({ code: 500, message: '创建分享失败', data: null }, { status: 500 });
@@ -125,3 +126,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ code: 500, message: '操作失败', data: null }, { status: 500 });
   }
 }
+
+// inline verifyToken to avoid import issues
+import { verifyToken } from '@/lib/auth';

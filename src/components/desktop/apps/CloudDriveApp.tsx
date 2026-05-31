@@ -127,8 +127,7 @@ export default function CloudDriveApp({ windowId }: { windowId: string }) {
   };
 
   const handleNewDocument = () => {
-    const appDef = getAppById('collab-editor');
-    if (appDef) useDesktopStore.getState().openApp(appDef);
+    // Online document editor has been removed
   };
 
   const filteredFiles = files.filter(f =>

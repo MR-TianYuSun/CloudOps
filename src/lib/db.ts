@@ -112,15 +112,21 @@ export function getDb(): Database.Database {
               while (backups.length > 3) {
                 unlinkSync(backups.shift()!);
               }
+              // 备份完成后再关闭临时连接
+              try { dbForBackup?.close(); dbForBackup = null; } catch {}
             })
             .catch((e: Error) => {
               console.error('[DB] Backup creation failed (non-fatal):', e);
+              try { dbForBackup?.close(); dbForBackup = null; } catch {}
             });
+          // 备份是异步的，不在此处关闭 dbForBackup，由 then/catch 关闭
+          dbForBackup = null; // 防止 finally 提前关闭
         }
       }
     } catch (e) {
-      console.error('[DB] Backup creation failed (non-fatal):', e);
+      console.error('[DB] Backup preparation failed (non-fatal):', e);
     } finally {
+      // 仅当备份未启动时才在此处关闭（备份启动后由 then/catch 关闭）
       if (dbForBackup) {
         try { dbForBackup.close(); } catch {}
       }
@@ -274,6 +280,35 @@ function initTables(db: Database.Database) {
       FOREIGN KEY (created_by) REFERENCES users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS skills (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      icon TEXT NOT NULL DEFAULT '⚡',
+      category TEXT NOT NULL DEFAULT 'general',
+      file_id INTEGER,
+      config TEXT NOT NULL DEFAULT '{}',
+      is_public INTEGER NOT NULL DEFAULT 0,
+      created_by INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (file_id) REFERENCES files(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS skill_runs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      skill_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      input TEXT NOT NULL DEFAULT '',
+      output TEXT,
+      status TEXT NOT NULL DEFAULT 'running',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      completed_at TEXT,
+      FOREIGN KEY (skill_id) REFERENCES skills(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    );
+
     CREATE TABLE IF NOT EXISTS file_comments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       file_id INTEGER NOT NULL,
@@ -374,6 +409,9 @@ function initTables(db: Database.Database) {
   migrateColumn(db, 'shares', 'file_name', 'TEXT');
   migrateColumn(db, 'shares', 'file_size', 'INTEGER');
   migrateColumn(db, 'users', 'email', 'TEXT');
+  migrateColumn(db, 'skills', 'run_count', 'INTEGER NOT NULL DEFAULT 0');
+  migrateColumn(db, 'skills', 'file_types', 'TEXT');
+  migrateColumn(db, 'skill_runs', 'error', 'TEXT');
 
   // 数据迁移：更新已有文件的 file_category（xlsx/xls → spreadsheet, pptx/ppt → presentation）
   try {

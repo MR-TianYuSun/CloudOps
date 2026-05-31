@@ -7,7 +7,7 @@ export default function DesktopIcons() {
   const { openApp, setStartMenuOpen } = useDesktopStore();
 
   const desktopApps = APP_REGISTRY.filter(app =>
-    ['cloud-drive', 'server-manager', 'dashboard', 'storage-analytics', 'recent-files', 'collab-editor', 'download-manager', 'theme-settings', 'file-encrypt', 'api-docs', 'terminal'].includes(app.id)
+    ['cloud-drive', 'server-manager', 'dashboard', 'storage-analytics', 'recent-files', 'theme-settings', 'file-encrypt', 'api-docs', 'terminal'].includes(app.id)
   );
 
   const handleDoubleClick = (app: AppDefinition) => {
@@ -42,7 +42,7 @@ function getAppIcon(icon: string): React.ReactNode {
     'folder': '📁', 'server': '🖥️', 'gauge': '📊', 'pie-chart': '📊',
     'clock': '🕐', 'file-edit': '📝', 'download': '⬇️', 'palette': '🎨',
     'shield': '🔒', 'code': '💻', 'globe': '🌐', 'settings': '⚙️',
-    'users': '👥', 'terminal': '⌨️', 'file': '📄',
+    'users': '👥', 'terminal': '⌨️', 'file': '📄', 'zap': '⚡',
   };
   return <span>{iconMap[icon] || '📄'}</span>;
 }
