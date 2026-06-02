@@ -11,6 +11,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+**[🚀 Live Demo](http://47.101.147.0:4000)** · **[📖 技术文档](TECHNICAL.md)** · **[🪟 Windows 部署](DEPLOY_WINDOWS.md)**
+
 </div>
 
 ---
