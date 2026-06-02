@@ -200,7 +200,7 @@ export async function GET(
     });
     
     // Replace all {{variable}} placeholders
-    let userPrompt = template.replace(/\{\{(\w+)\}\}/g, (_match: string, key: string) => {
+    const userPrompt = template.replace(/\{\{(\w+)\}\}/g, (_match: string, key: string) => {
       if (key === 'input' || key === 'content') return input || '';
       return String(extraQueryParams[key] ?? _match);
     });

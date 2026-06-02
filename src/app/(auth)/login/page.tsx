@@ -48,12 +48,12 @@ export default function LoginPage() {
 
       {/* 主容器：左右两栏 */}
       <div
-        className="relative z-10 w-full max-w-5xl flex rounded-2xl overflow-hidden shadow-dialog"
-        style={{ minHeight: '540px' }}
+        className="relative z-10 w-full max-w-5xl flex flex-col md:flex-row rounded-2xl overflow-hidden shadow-dialog"
+        style={{ minHeight: 'min(540px, 90vh)' }}
       >
-        {/* 左侧：品牌信息区 */}
+        {/* 左侧：品牌信息区（移动端隐藏） */}
         <div
-          className="flex-1 flex flex-col justify-center px-12 py-10 relative"
+          className="hidden md:flex flex-1 flex-col justify-center px-12 py-10 relative"
           style={{
             background: 'linear-gradient(135deg, rgba(124,92,255,0.12) 0%, rgba(105,231,255,0.06) 100%)',
             backdropFilter: 'blur(40px)',
@@ -115,7 +115,7 @@ export default function LoginPage() {
 
         {/* 右侧：登录表单卡片 */}
         <div
-          className="w-[420px] shrink-0 flex flex-col justify-center px-10 py-10"
+          className="w-full md:w-[420px] md:shrink-0 flex flex-col justify-center px-6 py-8 md:px-10 md:py-10"
           style={{
             background: 'rgba(15,20,32,0.75)',
             backdropFilter: 'blur(40px)',

@@ -77,21 +77,25 @@ export const useDesktopStore = create<DesktopStore>((set, get) => ({
     const offset = (windows.length % 8) * 30;
     nextZIndex += 1;
 
+    // 移动端默认最大化
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
     const newWindow: WindowState = {
       id,
       appId: app.id,
       title: app.title,
       icon: app.icon,
-      x: 80 + offset,
-      y: 40 + offset,
-      width: app.defaultWidth,
-      height: app.defaultHeight,
+      x: isMobile ? 0 : 80 + offset,
+      y: isMobile ? 0 : 40 + offset,
+      width: isMobile ? window.innerWidth : app.defaultWidth,
+      height: isMobile ? window.innerHeight : app.defaultHeight,
       minWidth: app.minWidth,
       minHeight: app.minHeight,
       zIndex: nextZIndex,
       isMinimized: false,
-      isMaximized: false,
+      isMaximized: isMobile,
       isActive: true,
+      ...(isMobile ? {} : {}),
     };
 
     set(state => ({

@@ -36,6 +36,17 @@ export const APP_REGISTRY: AppDefinition[] = [
     minHeight: 450,
     singleton: true,
   },
+  // AI 助手
+  {
+    id: 'ai-assistant',
+    title: 'AI 云盘助手',
+    icon: 'bot',
+    defaultWidth: 480,
+    defaultHeight: 620,
+    minWidth: 380,
+    minHeight: 450,
+    singleton: true,
+  },
   // P2 应用
   {
     id: 'storage-analytics',

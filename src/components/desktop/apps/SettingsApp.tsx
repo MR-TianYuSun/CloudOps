@@ -119,25 +119,27 @@ export default function SettingsApp({ windowId }: { windowId: string }) {
   ];
 
   return (
-    <div className="w-full h-full flex bg-[#0d0f1a]/95">
-      {/* 左侧导航 */}
-      <div className="w-40 border-r border-border/20 p-2 shrink-0">
-        <div className="flex items-center gap-2 px-2 py-1.5 mb-2">
-          <Settings className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-medium text-foreground/80">系统设置</span>
+    <div className="w-full h-full flex flex-col sm:flex-row bg-[#0d0f1a]/95">
+      {/* 导航 - 移动端水平滚动，桌面端垂直侧边栏 */}
+      <div className="sm:w-40 sm:border-r sm:border-b-0 border-b border-border/20 p-2 shrink-0 overflow-x-auto">
+        <div className="flex sm:flex-col gap-1">
+          <div className="flex items-center gap-2 px-2 py-1.5 mb-0 sm:mb-2 shrink-0">
+            <Settings className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-foreground/80 hidden sm:inline">系统设置</span>
+          </div>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors shrink-0
+                ${activeTab === tab.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}
+              `}
+            >
+              <tab.icon className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          ))}
         </div>
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors
-              ${activeTab === tab.id ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}
-            `}
-          >
-            <tab.icon className="w-3.5 h-3.5" />
-            {tab.label}
-          </button>
-        ))}
       </div>
 
       {/* 右侧内容 */}

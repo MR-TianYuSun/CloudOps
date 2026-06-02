@@ -64,7 +64,7 @@ export default function CssViewer({ url }: CssViewerProps) {
 function highlightCss(css: string): React.ReactNode {
   const lines = css.split('\n');
   return lines.map((line, i) => {
-    let highlighted = line;
+    const highlighted = line;
     // Comments
     if (line.trim().startsWith('/*') || line.trim().startsWith('*') || line.trim().endsWith('*/')) {
       return <div key={i} className="css-comment">{line}</div>;

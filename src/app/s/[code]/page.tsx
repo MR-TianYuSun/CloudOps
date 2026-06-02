@@ -35,6 +35,9 @@ export default function SharePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [needPassword, setNeedPassword] = useState(false);
   const [downloading, setDownloading] = useState<number | null>(null); // file id being downloaded, 0 = single file
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
@@ -49,6 +52,9 @@ export default function SharePage() {
       const data = await res.json();
       if (data.code === 200) {
         setShare(data.data);
+        if (data.data.hasPassword && !data.data.folderContents) {
+          setNeedPassword(true);
+        }
       } else {
         setError(data.message);
       }
@@ -56,6 +62,33 @@ export default function SharePage() {
       setError('获取分享信息失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const verifyPassword = async () => {
+    if (!password.trim()) {
+      setPasswordError('请输入提取码');
+      return;
+    }
+    setVerifying(true);
+    setPasswordError('');
+    try {
+      const res = await fetch(`/api/shares/${code}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        setShare(data.data);
+        setNeedPassword(false);
+      } else {
+        setPasswordError(data.message || '提取码错误');
+      }
+    } catch {
+      setPasswordError('验证失败，请重试');
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -179,7 +212,7 @@ export default function SharePage() {
   return (
     <div className="min-h-screen bg-[#070A14] flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
-        <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-8">
+        <div className="bg-white/[0.06] backdrop-blur-xl border border-white/10 rounded-2xl p-5 md:p-8">
           {/* 文件信息 */}
           <div className="text-center mb-6">
             <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-white/[0.06] flex items-center justify-center">
@@ -193,12 +226,43 @@ export default function SharePage() {
             <p className="text-white/40 text-sm mt-1">
               {share?.isFolder ? '文件夹' : share?.fileSizeText}
               {share?.fileExt && !share?.isFolder && ` · ${share.fileExt.toUpperCase()}`}
-              {share?.isFolder && share.folderContents.length > 0 && ` · ${share.folderContents.length} 个项目`}
+              {share?.isFolder && share.folderContents?.length > 0 && ` · ${share.folderContents.length} 个项目`}
             </p>
           </div>
 
-          {/* 文件夹内容列表 - 可选择下载 */}
-          {share?.isFolder && share.folderContents.length > 0 && (
+          {/* 密码验证 - 有密码且尚未验证时显示 */}
+          {needPassword && (
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3 justify-center text-white/60 text-sm">
+                <Lock className="w-4 h-4" />
+                <span>该分享需要提取码</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setPasswordError(''); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') verifyPassword(); }}
+                  placeholder="请输入提取码"
+                  className="flex-1 bg-white/[0.06] border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-[#7C5CFF]/30"
+                  autoFocus
+                />
+                <button
+                  onClick={verifyPassword}
+                  disabled={verifying}
+                  className="px-5 py-2.5 bg-[#7C5CFF] hover:bg-[#7C5CFF]/80 disabled:opacity-50 text-white text-sm rounded-lg transition-colors"
+                >
+                  {verifying ? '验证中...' : '验证'}
+                </button>
+              </div>
+              {passwordError && (
+                <p className="text-red-400 text-xs mt-2 text-center">{passwordError}</p>
+              )}
+            </div>
+          )}
+
+          {/* 文件夹内容列表 - 可选择下载 (密码验证后可见) */}
+          {!needPassword && share?.isFolder && share.folderContents?.length > 0 && (
             <div className="mb-4">
               {/* 全选栏 */}
               <div className="flex items-center justify-between px-4 py-2 mb-1">
@@ -284,39 +348,41 @@ export default function SharePage() {
             </div>
           )}
 
-          {/* 下载按钮 */}
-          {!share?.isFolder ? (
-            /* 单文件下载 */
-            <button
-              onClick={handleDownloadAll}
-              disabled={downloading !== null || (share?.hasPassword && !password)}
-              className="w-full py-3 bg-[#7C5CFF] hover:bg-[#7C5CFF]/80 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              {downloading !== null ? '下载中...' : '下载文件'}
-            </button>
-          ) : (
-            /* 文件夹 - 批量下载按钮 */
-            <div className="space-y-2">
-              {selectedCount > 0 && (
-                <button
-                  onClick={handleDownloadSelected}
-                  disabled={downloading !== null || (share?.hasPassword && !password)}
-                  className="w-full py-3 bg-[#7C5CFF] hover:bg-[#7C5CFF]/80 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  {downloading !== null ? `下载中 (${downloading})...` : `下载选中 (${selectedCount} 个文件)`}
-                </button>
-              )}
+          {/* 下载按钮 (密码验证后可见) */}
+          {!needPassword && (
+            !share?.isFolder ? (
+              /* 单文件下载 */
               <button
                 onClick={handleDownloadAll}
-                disabled={downloading !== null || (share?.hasPassword && !password)}
-                className="w-full py-3 bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-40 disabled:cursor-not-allowed text-white/80 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 border border-white/10"
+                disabled={downloading !== null}
+                className="w-full py-3 bg-[#7C5CFF] hover:bg-[#7C5CFF]/80 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
               >
                 <Download className="w-4 h-4" />
-                {downloading !== null ? '下载中...' : '下载全部文件'}
+                {downloading !== null ? '下载中...' : '下载文件'}
               </button>
-            </div>
+            ) : (
+              /* 文件夹 - 批量下载按钮 */
+              <div className="space-y-2">
+                {selectedCount > 0 && (
+                  <button
+                    onClick={handleDownloadSelected}
+                    disabled={downloading !== null}
+                    className="w-full py-3 bg-[#7C5CFF] hover:bg-[#7C5CFF]/80 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Download className="w-4 h-4" />
+                    {downloading !== null ? `下载中 (${downloading})...` : `下载选中 (${selectedCount} 个文件)`}
+                  </button>
+                )}
+                <button
+                  onClick={handleDownloadAll}
+                  disabled={downloading !== null}
+                  className="w-full py-3 bg-white/[0.08] hover:bg-white/[0.12] disabled:opacity-40 disabled:cursor-not-allowed text-white/80 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 border border-white/10"
+                >
+                  <Download className="w-4 h-4" />
+                  {downloading !== null ? '下载中...' : '下载全部文件'}
+                </button>
+              </div>
+            )
           )}
 
           {/* 下载错误提示 */}

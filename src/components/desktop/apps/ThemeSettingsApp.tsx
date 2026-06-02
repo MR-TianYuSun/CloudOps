@@ -108,6 +108,13 @@ export default function ThemeSettingsApp({ windowId }: { windowId: string }) {
   const [fontSize, setFontSize] = useState('medium');
   const getToken = () => typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
+  const applyThemeColors = (theme: typeof THEMES[0]) => {
+    const root = document.documentElement;
+    Object.entries(theme.colors).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('desktop-theme');
     if (saved) setCurrentTheme(saved);
@@ -135,13 +142,6 @@ export default function ThemeSettingsApp({ windowId }: { windowId: string }) {
         .catch(() => {});
     }
   }, []);
-
-  const applyThemeColors = (theme: typeof THEMES[0]) => {
-    const root = document.documentElement;
-    Object.entries(theme.colors).forEach(([key, value]) => {
-      root.style.setProperty(key, value);
-    });
-  };
 
   const applyTheme = async (themeId: string) => {
     const theme = THEMES.find(t => t.id === themeId);

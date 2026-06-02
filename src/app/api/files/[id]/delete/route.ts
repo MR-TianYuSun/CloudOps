@@ -82,11 +82,11 @@ function permanentDelete(
   fileId: number,
   file: Record<string, unknown>
 ) {
-  const fs = require('fs');
+  const fs = eval('require')('fs');
 
   // 收集要删除的文件总大小和所有者，用于更新 storage_used
   let totalSize = 0;
-  let ownerId: number | null = Number(file.uploaded_by) || null;
+  const ownerId: number | null = Number(file.uploaded_by) || null;
 
   // 如果是文件，删除磁盘文件
   if (!file.is_folder && file.storage_path) {
@@ -117,7 +117,7 @@ function permanentDelete(
 }
 
 function permanentDeleteRecursive(db: ReturnType<typeof getDb>, folderId: number): number {
-  const fs = require('fs');
+  const fs = eval('require')('fs');
   let totalSize = 0;
   const children = db.prepare('SELECT * FROM files WHERE parent_id = ?').all(folderId) as Record<string, unknown>[];
   for (const child of children) {

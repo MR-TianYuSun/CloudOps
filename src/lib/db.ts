@@ -18,7 +18,6 @@ const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), 'data', 'cloudop
 const DEFAULT_UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'data', 'uploads');
 
 let db: Database.Database | null = null;
-let dbInstance: InstanceType<typeof Database> | null = null;
 
 /** 获取上传文件存储根路径（优先使用管理员在系统设置中配置的路径） */
 export function getUploadDir(): string {

@@ -17,6 +17,7 @@ const WebdavSettingsApp = dynamic(() => import('./apps/WebdavSettingsApp'), { ss
 const SettingsApp = dynamic(() => import('./apps/SettingsApp'), { ssr: false });
 const UserManagementApp = dynamic(() => import('./apps/UserManagementApp'), { ssr: false });
 const TerminalApp = dynamic(() => import('./apps/TerminalApp'), { ssr: false });
+const AIAssistantApp = dynamic(() => import('./apps/AIAssistantApp'), { ssr: false });
 
 
 const APP_COMPONENT_MAP: Record<string, ComponentType<{ windowId: string }>> = {
@@ -33,6 +34,7 @@ const APP_COMPONENT_MAP: Record<string, ComponentType<{ windowId: string }>> = {
   'settings': SettingsApp,
   'user-management': UserManagementApp,
   'terminal': TerminalApp,
+  'ai-assistant': AIAssistantApp,
 
 };
 
@@ -49,7 +51,7 @@ export default function AppRenderer({ appId, windowId }: AppRendererProps) {
       <div className="w-full h-full flex items-center justify-center text-muted-foreground">
         <div className="text-center">
           <div className="text-4xl mb-2">🚧</div>
-          <p className="text-sm">应用 "{appId}" 开发中...</p>
+          <p className="text-sm">应用 &ldquo;{appId}&rdquo; 开发中...</p>
         </div>
       </div>
     );

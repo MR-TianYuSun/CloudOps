@@ -7,6 +7,7 @@ import {
   Folder, File, Download, Share2, Trash2, Eye,
   ChevronRight, MoreHorizontal, ArrowLeft, Pencil, X,
   RotateCcw, Copy, Move, CheckSquare, Link2, Lock, PenLine,
+  MoreVertical,
 } from 'lucide-react';
 import { FilePreview } from '@/components/file-preview';
 
@@ -587,24 +588,24 @@ export default function CloudDrivePage() {
       onDrop={handleDrop}
     >
       {/* 空间切换 + 面包屑 */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center bg-surface-container rounded-lg p-0.5">
             <button
               onClick={() => { setSpaceType('personal'); setTeamId(null); setCurrentParentId(0); setBreadcrumbs([{ id: 0, name: '全部文件' }]); setShowTrash(false); }}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${spaceType === 'personal' && !showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${spaceType === 'personal' && !showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               个人空间
             </button>
             <button
               onClick={() => { setSpaceType('team'); setShowTrash(false); }}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${spaceType === 'team' && !showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${spaceType === 'team' && !showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               团队空间
             </button>
             <button
               onClick={() => { setShowTrash(true); setTrashBatchMode(false); setTrashSelectedIds(new Set()); fetchTrash(); }}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${showTrash ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
               回收站
             </button>
@@ -622,15 +623,15 @@ export default function CloudDrivePage() {
         </div>
         {/* 面包屑 */}
         {!showTrash && (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1 sm:gap-2 text-sm overflow-x-auto max-w-[50vw] sm:max-w-none">
             {isSearching && (
               <button onClick={() => { setIsSearching(false); fetchFiles(); setSearchQuery(''); }}
-                className="p-1.5 rounded-lg hover:bg-surface-container transition-colors">
+                className="p-1.5 rounded-lg hover:bg-surface-container transition-colors shrink-0">
                 <ArrowLeft className="w-4 h-4" />
               </button>
             )}
             {breadcrumbs.map((bc, i) => (
-              <span key={bc.id} className="flex items-center gap-2">
+              <span key={bc.id} className="flex items-center gap-1 sm:gap-2 shrink-0">
                 {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40" />}
                 <button
                   onClick={() => navigateTo(i)}
@@ -841,18 +842,19 @@ export default function CloudDrivePage() {
           {/* 列表视图 */}
           {viewMode === 'list' && sortedFiles.length > 0 && (
             <div className="bg-surface/60 backdrop-blur-xl border border-border/30 rounded-xl overflow-hidden">
-              <div className={`grid gap-4 px-4 py-2.5 text-xs text-muted-foreground/60 border-b border-border/20 ${batchMode ? 'grid-cols-[32px_1fr_80px_120px_80px]' : 'grid-cols-[1fr_80px_120px_80px_80px]'}`}>
+              <div className={`grid gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 text-xs text-muted-foreground/60 border-b border-border/20 ${batchMode ? 'grid-cols-[32px_1fr_60px] sm:grid-cols-[32px_1fr_80px_120px_80px]' : 'grid-cols-[1fr_60px] sm:grid-cols-[1fr_80px_120px_80px_80px]'}`}>
                 {batchMode && <span><input type="checkbox" checked={selectedIds.size === sortedFiles.length} onChange={toggleSelectAll} className="accent-primary" /></span>}
                 <span>名称</span>
                 <span className="hidden sm:block">大小</span>
+                <span className="sm:hidden text-right">···</span>
                 <span className="hidden sm:block">修改时间</span>
                 <span className="hidden sm:block">上传者</span>
-                <span>操作</span>
+                <span className="hidden sm:block">操作</span>
               </div>
               {sortedFiles.map((file) => (
                 <div
                   key={file.id}
-                  className={`grid gap-4 px-4 py-3 items-center hover:bg-surface-container/30 transition-colors cursor-pointer group ${batchMode ? 'grid-cols-[32px_1fr_80px_120px_80px]' : 'grid-cols-[1fr_80px_120px_80px_80px]'} ${selectedIds.has(file.id) ? 'bg-primary/5' : ''}`}
+                  className={`grid gap-2 sm:gap-4 px-3 sm:px-4 py-3 items-center hover:bg-surface-container/30 transition-colors cursor-pointer group ${batchMode ? 'grid-cols-[32px_1fr_60px] sm:grid-cols-[32px_1fr_80px_120px_80px]' : 'grid-cols-[1fr_60px] sm:grid-cols-[1fr_80px_120px_80px_80px]'} ${selectedIds.has(file.id) ? 'bg-primary/5' : ''}`}
                   onClick={() => batchMode ? toggleSelect(file.id) : (file.isFolder ? enterFolder(file) : setPreviewFile(file))}
                   onContextMenu={(e) => handleContextMenu(e, file.id)}
                 >
@@ -871,9 +873,10 @@ export default function CloudDrivePage() {
                     )}
                   </div>
                   <span className="text-sm text-muted-foreground hidden sm:block">{file.isFolder ? '-' : file.sizeText}</span>
+                  <button className="sm:hidden p-1 rounded hover:bg-surface-container transition-colors" onClick={(e) => { e.stopPropagation(); handleContextMenu(e, file.id); }}><MoreVertical className="w-4 h-4 text-muted-foreground" /></button>
                   <span className="text-sm text-muted-foreground hidden sm:block">{new Date(file.updatedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                   <span className="text-sm text-muted-foreground hidden sm:block">{file.uploaderName || '-'}</span>
-                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                  <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     {!file.isFolder && PREVIEWABLE.includes(file.fileCategory) && (
                       <button onClick={(e) => { e.stopPropagation(); setPreviewFile(file); }} className="p-1 rounded hover:bg-surface-container transition-colors" title="预览"><Eye className="w-3.5 h-3.5" /></button>
                     )}

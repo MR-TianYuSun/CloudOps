@@ -87,16 +87,17 @@ export default function WindowFrame({ window: win, children }: WindowFrameProps)
 
   return (
     <div
-      className={`absolute flex flex-col rounded-lg overflow-hidden shadow-2xl border transition-shadow duration-150
+      className={`absolute flex flex-col overflow-hidden shadow-2xl border transition-shadow duration-150
         ${win.isActive ? 'border-primary/30 shadow-primary/10' : 'border-border/30'}
         ${win.isMaximized ? 'rounded-none' : 'rounded-lg'}
         ${isDragging || isResizing ? 'select-none' : ''}
+        md:rounded-lg
       `}
       style={{
-        left: win.x,
-        top: win.y,
-        width: win.width,
-        height: win.height,
+        left: win.isMaximized ? 0 : win.x,
+        top: win.isMaximized ? 0 : win.y,
+        width: win.isMaximized ? '100%' : win.width,
+        height: win.isMaximized ? '100%' : win.height,
         zIndex: win.zIndex,
       }}
       onMouseDown={() => focusWindow(win.id)}

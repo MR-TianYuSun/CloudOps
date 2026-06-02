@@ -71,7 +71,7 @@ export default function Taskbar() {
       {startMenuOpen && (
         <div
           ref={startMenuRef}
-          className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[520px] max-h-[520px] bg-[#1a1d2e]/95 backdrop-blur-xl border border-border/30 rounded-xl shadow-2xl z-[9999] overflow-hidden flex flex-col"
+          className="fixed bottom-12 left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] md:w-[520px] max-h-[520px] bg-[#1a1d2e]/95 backdrop-blur-xl border border-border/30 rounded-xl shadow-2xl z-[9999] overflow-hidden flex flex-col"
         >
           {/* 搜索栏 */}
           <div className="p-4 pb-2">

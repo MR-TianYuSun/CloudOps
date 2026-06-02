@@ -162,9 +162,9 @@ export default function CloudDriveApp({ windowId }: { windowId: string }) {
   return (
     <div className="w-full h-full flex flex-col bg-[#0d0f1a]/95">
       {/* 工具栏 */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/20 bg-[#0e1020]/50">
+      <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-2 border-b border-border/20 bg-[#0e1020]/50 overflow-x-auto">
         {pathStack.length > 0 && (
-          <button onClick={handleGoBack} className="p-1.5 rounded hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={handleGoBack} className="p-1.5 rounded hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors shrink-0">
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}
@@ -174,14 +174,14 @@ export default function CloudDriveApp({ windowId }: { windowId: string }) {
             {pathStack.length > 0 ? pathStack.map(p => p.name).join(' / ') : '根目录'}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
           <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-primary/10 text-primary' : 'hover:bg-white/5 text-muted-foreground'}`}>
             <Grid className="w-3.5 h-3.5" />
           </button>
           <button onClick={() => setViewMode('list')} className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'hover:bg-white/5 text-muted-foreground'}`}>
             <List className="w-3.5 h-3.5" />
           </button>
-          <div className="w-px h-4 bg-border/30" />
+          <div className="hidden md:block w-px h-4 bg-border/30" />
           <button onClick={handleNewDocument} className="p-1.5 rounded hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors" title="新建文档">
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -226,7 +226,7 @@ export default function CloudDriveApp({ windowId }: { windowId: string }) {
             <p className="text-xs">暂无文件</p>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-2">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(90px,1fr))] gap-1.5 md:gap-2">
             {filteredFiles.map(file => (
               <div
                 key={file.id}

@@ -7,7 +7,7 @@ export default function DesktopIcons() {
   const { openApp, setStartMenuOpen } = useDesktopStore();
 
   const desktopApps = APP_REGISTRY.filter(app =>
-    ['cloud-drive', 'server-manager', 'dashboard', 'storage-analytics', 'recent-files', 'theme-settings', 'file-encrypt', 'api-docs', 'terminal'].includes(app.id)
+    ['cloud-drive', 'server-manager', 'dashboard', 'ai-assistant', 'storage-analytics', 'recent-files', 'theme-settings', 'file-encrypt', 'api-docs', 'terminal'].includes(app.id)
   );
 
   const handleDoubleClick = (app: AppDefinition) => {
@@ -16,18 +16,19 @@ export default function DesktopIcons() {
   };
 
   return (
-    <div className="absolute inset-0 p-4 pt-2">
-      <div className="grid grid-cols-[repeat(auto-fill,80px)] gap-2 auto-rows-min">
+    <div className="absolute inset-0 p-2 md:p-4 pt-2">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(64px,80px))] gap-1 md:gap-2 auto-rows-min">
         {desktopApps.map(app => (
           <button
             key={app.id}
-            className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors group w-[80px]"
+            className="flex flex-col items-center gap-1 p-1.5 md:p-2 rounded-lg hover:bg-white/5 active:bg-white/10 transition-colors group w-full"
             onDoubleClick={() => handleDoubleClick(app)}
+            onTouchEnd={(e) => { e.preventDefault(); handleDoubleClick(app); }}
           >
-            <div className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-xl group-hover:bg-primary/20 transition-colors shadow-lg shadow-black/20">
+            <div className="w-9 h-9 md:w-11 md:h-11 rounded-lg bg-primary/10 flex items-center justify-center text-lg md:text-xl group-hover:bg-primary/20 transition-colors shadow-lg shadow-black/20">
               {getAppIcon(app.icon)}
             </div>
-            <span className="text-[10px] text-foreground/80 text-center leading-tight line-clamp-2 drop-shadow-md">
+            <span className="text-[9px] md:text-[10px] text-foreground/80 text-center leading-tight line-clamp-2 drop-shadow-md">
               {app.title}
             </span>
           </button>
@@ -42,7 +43,7 @@ function getAppIcon(icon: string): React.ReactNode {
     'folder': '📁', 'server': '🖥️', 'gauge': '📊', 'pie-chart': '📊',
     'clock': '🕐', 'file-edit': '📝', 'download': '⬇️', 'palette': '🎨',
     'shield': '🔒', 'code': '💻', 'globe': '🌐', 'settings': '⚙️',
-    'users': '👥', 'terminal': '⌨️', 'file': '📄', 'zap': '⚡',
+    'users': '👥', 'terminal': '⌨️', 'file': '📄', 'zap': '⚡', 'bot': '🤖',
   };
   return <span>{iconMap[icon] || '📄'}</span>;
 }
