@@ -6,7 +6,7 @@ import {
   Upload, FolderPlus, Search, List, Grid3X3,
   Folder, File, Download, Share2, Trash2, Eye,
   ChevronRight, MoreHorizontal, ArrowLeft, Pencil, X,
-  RotateCcw, Copy, Move, CheckSquare, Link2, Lock, PenLine,
+  RotateCcw, Copy, Move, CheckSquare, Link2, Lock,
   MoreVertical,
 } from 'lucide-react';
 import { FilePreview } from '@/components/file-preview';
@@ -48,7 +48,6 @@ const CATEGORY_MAP: Record<string, CategoryInfo> = {
 };
 
 const PREVIEWABLE = ['document', 'spreadsheet', 'presentation', 'text', 'image', 'data', 'code'];
-const EDITABLE_EXTENSIONS = ['docx', 'xlsx', 'xls', 'pptx', 'ppt'];
 
 function getCategoryInfo(category: string): CategoryInfo {
   return CATEGORY_MAP[category] || CATEGORY_MAP.other;
@@ -983,11 +982,7 @@ export default function CloudDrivePage() {
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                {EDITABLE_EXTENSIONS.includes((previewFile.fileExt || previewFile.name?.split('.').pop() || '').toLowerCase()) && (
-                  <button onClick={() => router.push(`/documents/${previewFile.id}`)} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm transition-colors">
-                    <PenLine className="w-3.5 h-3.5" /> 在线编辑
-                  </button>
-                )}
+
                 <button onClick={() => handleDownload(previewFile)} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container hover:bg-surface-container/80 rounded-lg text-sm transition-colors">
                   <Download className="w-3.5 h-3.5" /> 下载
                 </button>

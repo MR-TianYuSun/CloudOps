@@ -157,6 +157,13 @@ Desktop.ini
 *.tar
 # TypeScript
 *.tsbuildinfo
+# === 用户数据 (数据库 + 上传文件) - 避免被覆盖 ===
+data/
+!data/.gitkeep
+
+# === 用户上传文件 (备用路径) ===
+uploads/
+
 # Misc
 .coze-logs
 .preview
