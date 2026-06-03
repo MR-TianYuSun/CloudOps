@@ -29,7 +29,6 @@ CloudOps V7 是一套为个人开发者和小型团队打造的**全功能私有
 - 轻量部署 — 单进程运行，最低 512MB 内存，Windows 一键 `start.bat` 启动
 - 桌面系统 — 背景轮播、窗口管理、任务栏，15 个桌面应用
 - 全功能文件管理 — 上传/下载/9 种预览/外链分享/回收站/加密/评论
-- 在线文档编辑 — Univer 引擎，docx/xlsx/pptx 创建与编辑，WebSocket OT 实时协作
 - Skill 自动化 — prompt（LLM）/ script（JS 沙箱）/ automation（工作流）三种类型，完整生命周期管理
 - AI 对话助手 — DeepSeek Function Calling Agent，内置 11 种文件管理工具，最多 8 轮工具调用
 - 网页远程连接 — Linux SSH 终端 + Windows VNC 远程桌面，3 条 WebSocket 通道
@@ -60,15 +59,6 @@ CloudOps V7 是一套为个人开发者和小型团队打造的**全功能私有
 | 文件评论 | 对文件添加/查看/删除评论 |
 | 最近文件 | 记录和查看最近访问的文件 |
 | 远程下载 | 从 URL 下载文件到云盘，任务队列与进度追踪 |
-
-### 文档编辑与协作
-
-| 功能 | 说明 |
-|------|------|
-| 文档创建 | 新建 docx / xlsx / pptx / md / txt 空文档 |
-| 在线编辑 | Univer 引擎，支持 docx / xlsx / pptx 打开与保存 |
-| 实时协作 | WebSocket OT 协议，多用户同时编辑、光标同步、选区广播 |
-| 协作者管理 | 查看文档协作者列表 |
 
 ### Skill 自动化平台
 
